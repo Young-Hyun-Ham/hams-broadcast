@@ -1,0 +1,267 @@
+---
+interface Props {
+  activePage?: "home" | "schedule" | "admin";
+}
+
+const { activePage = "home" } = Astro.props;
+---
+
+<header class="site-header">
+  <a class="brand" href="/" aria-label="ON AIR 홈">
+    <span class="live-dot"></span>ON AIR
+  </a>
+  <nav class="main-nav" aria-label="주요 메뉴">
+    <a
+      class:list={{ active: activePage === "home" }}
+      href="/"
+      data-i18n="homeMenu"
+    >
+      TOP 5
+    </a>
+    <a
+      class:list={{ active: activePage === "schedule" }}
+      href="/schedule"
+      data-i18n="scheduleMenu"
+    >
+      전체 편성
+    </a>
+    <a class:list={{ active: activePage === "admin" }} href="/admin" data-admin-only hidden>
+      관리자
+    </a>
+  </nav>
+  <div class="header-actions">
+    <label class="country-select">
+      <span class="sr-only" data-i18n="countryLabel">
+        국가 선택
+      </span>
+      <span id="country-flag">🇰🇷</span>
+      <select id="country" aria-label="국가 선택">
+        <option value="KR">대한민국</option>
+        <option value="US">United States</option>
+        <option value="JP">日本</option>
+        <option value="GB">United Kingdom</option>
+        <option value="FR">France</option>
+        <option value="DE">Deutschland</option>
+        <option value="ES">España</option>
+        <option value="IT">Italia</option>
+      </select>
+    </label>
+    <button
+      class="icon-button"
+      id="refresh"
+      aria-label="새로고침"
+      title="새로고침"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M20 6v5h-5M4 18v-5h5M6.1 9a7 7 0 0 1 11.5-2.5L20 9M4 15l2.4 2.5A7 7 0 0 0 18 15"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+    <div class="auth-area" id="header-auth" aria-live="polite">
+      <span class="auth-loading" aria-label="로그인 정보 확인 중"></span>
+    </div>
+  </div>
+</header>
+
+<script>
+  import { authStore, loadAuth } from "../stores/authStore";
+
+  const authArea = document.querySelector<HTMLElement>("#header-auth");
+  const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char] || char);
+
+  function renderAuth() {
+    if (!authArea) return;
+    const { user, isAdmin, status } = authStore.getState();
+    document.querySelectorAll<HTMLElement>("[data-admin-only]").forEach((element) => { element.hidden = !isAdmin; });
+    if (status === "idle" || status === "loading") {
+      authArea.innerHTML = `<span class="auth-loading" aria-label="로그인 정보 확인 중"></span>`;
+      return;
+    }
+    if (status === "guest" || status === "error" || !user) {
+      const returnTo = `${location.pathname}${location.search}`;
+      authArea.innerHTML = `<a class="login-button" href="/login?returnTo=${encodeURIComponent(returnTo)}">로그인</a>`;
+      return;
+    }
+      const name = user.nickname || user.loginId || user.email || "HAMS";
+      const initial = name.trim().slice(0, 1).toUpperCase();
+      const membership = user.serviceMemberships?.[0];
+      const gender = user.gender ? ({ male: "남성", female: "여성", other: "기타", prefer_not_to_say: "응답하지 않음" })[user.gender] : "미등록";
+      authArea.innerHTML = `<div class="user-menu">
+        <button type="button" class="user-button" aria-expanded="false"><span class="avatar">${escapeHtml(initial)}</span><span class="user-summary"><strong>${escapeHtml(name)}</strong><small>${escapeHtml(user.email || "")}</small></span><i>⌄</i></button>
+        <div class="user-dropdown" hidden>
+          <div class="profile-summary"><span class="avatar">${escapeHtml(initial)}</span><p><strong>${escapeHtml(name)}</strong><small>${escapeHtml(user.email || "")}</small></p></div>
+          <dl class="session-details"><div><dt>생년월일</dt><dd>${escapeHtml(user.birthDate || "미등록")}</dd></div><div><dt>성별</dt><dd>${escapeHtml(gender)}</dd></div><div><dt>서비스</dt><dd>${escapeHtml(membership?.serviceName || "가입정보 없음")}</dd></div><div><dt>이용 타입</dt><dd>${escapeHtml(membership?.plan?.toUpperCase() || "-")}</dd></div></dl>
+          <div class="account-actions"><a href="/api/auth/profile">회원정보 수정</a><a href="/api/auth/profile?destination=services">서비스 수정</a></div>
+          <a class="logout-button" href="/api/auth/logout?returnTo=/">로그아웃</a>
+        </div>
+      </div>`;
+      const button = authArea.querySelector<HTMLButtonElement>(".user-button")!;
+      const dropdown = authArea.querySelector<HTMLElement>(".user-dropdown")!;
+      button.addEventListener("click", () => { dropdown.hidden = !dropdown.hidden; button.setAttribute("aria-expanded", String(!dropdown.hidden)); });
+  }
+  document.addEventListener("click", (event) => {
+    if (!authArea?.contains(event.target as Node)) {
+      const dropdown = authArea?.querySelector<HTMLElement>(".user-dropdown");
+      const button = authArea?.querySelector<HTMLElement>(".user-button");
+      if (dropdown) dropdown.hidden = true;
+      button?.setAttribute("aria-expanded", "false");
+    }
+  });
+  const unsubscribeAuth = authStore.subscribe(renderAuth);
+  window.addEventListener("pagehide", unsubscribeAuth, { once: true });
+  renderAuth();
+  loadAuth();
+</script>
+
+<style is:global>
+  .site-header {
+    max-width: 1440px;
+    height: 96px;
+    margin: auto;
+    padding: 0 54px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ffffff14;
+  }
+  .brand {
+    color: #f7f4ee;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .live-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ec3a2f;
+    box-shadow: 0 0 16px #ec3a2f;
+  }
+  .main-nav {
+    display: flex;
+    gap: 30px;
+    margin-left: auto;
+    margin-right: 36px;
+  }
+  .main-nav a {
+    color: #77736e;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 10px 0;
+    border-bottom: 1px solid transparent;
+  }
+  .main-nav a:hover,
+  .main-nav a.active {
+    color: #f7f4ee;
+    border-color: #e04b40;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .auth-area { position:relative; }
+  [data-admin-only][hidden] { display:none !important; }
+  .auth-loading { display:block;width:202px;height:48px;border-radius:13px;background:#ffffff0b;animation:pulse 1.2s ease-in-out infinite; }
+  .login-button { display:grid;height:44px;padding:0 16px;place-items:center;border:1px solid #bd3e35;border-radius:4px;background:#bd3e35;color:#fff;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap; }
+  .user-button { min-width:202px;height:48px;padding:4px 9px 4px 4px;display:flex;align-items:center;gap:9px;border:1px solid #ffffff20;border-radius:13px;background:#121418;color:#f7f4ee;cursor:pointer;text-align:left; }
+  .user-button:hover,.user-button[aria-expanded="true"]{border-color:#8f3932;background:#181417}
+  .avatar { width:40px;height:40px;display:grid;flex:none;place-items:center;border-radius:11px;background:linear-gradient(145deg,#d05247,#9f3029);color:#fff;font-size:15px;font-weight:800;box-shadow:0 6px 18px #9f302940; }
+  .user-summary { display:flex;min-width:0;max-width:130px;flex:1;flex-direction:column;line-height:1.2; }.user-summary strong{overflow:hidden;text-overflow:ellipsis;font-size:13px;white-space:nowrap}.user-summary small{margin-top:4px;overflow:hidden;text-overflow:ellipsis;color:#817c75;font-size:10px;white-space:nowrap}.user-button i{margin-left:auto;color:#817c75;font-size:14px;font-style:normal}
+  .user-dropdown { position:absolute;z-index:30;right:0;top:calc(100% + 8px);width:310px;padding:18px 19px 12px;border:1px solid #ffffff1f;border-radius:17px;background:#121418;color:#f7f4ee;box-shadow:0 22px 55px #000c; }.user-dropdown[hidden]{display:none}
+  .profile-summary{display:flex;gap:12px;align-items:center;padding-bottom:16px;border-bottom:1px solid #ffffff14}.profile-summary p{display:flex;min-width:0;margin:0;flex-direction:column}.profile-summary p strong{font-size:14px}.profile-summary p small{margin-top:5px;color:#817c75;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .session-details{display:grid;gap:10px;margin:14px 0;padding:0}.session-details>div{display:flex;align-items:center;justify-content:space-between;gap:15px;font-size:11px}.session-details dt{color:#77736e}.session-details dd{overflow:hidden;margin:0;color:#e9e4dc;font-weight:700;text-align:right;text-overflow:ellipsis;white-space:nowrap}
+  .account-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.account-actions a{display:grid;min-height:42px;place-items:center;border:1px solid #ffffff1a;border-radius:10px;background:#ffffff08;color:#d9d4cc;font-size:11px;font-weight:700;text-decoration:none}.account-actions a:hover{border-color:#a23b34;background:#bd3e3518;color:#e26a60}
+  .logout-button{display:block;margin-top:10px;padding:12px 8px 3px;border-top:1px solid #ffffff14;color:#e65d54;text-align:center;text-decoration:none;font-size:12px;font-weight:700}
+  .country-select {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 13px;
+    border: 1px solid #ffffff20;
+    border-radius: 4px;
+    background: #ffffff08;
+  }
+  .country-select select {
+    color: #e6e1d9;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .country-select select option {
+    background: #181a1d;
+  }
+  .icon-button {
+    width: 44px;
+    height: 44px;
+    border: 1px solid #ffffff20;
+    border-radius: 4px;
+    background: #ffffff08;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .icon-button:hover {
+    background: #ffffff12;
+  }
+  .icon-button svg {
+    width: 19px;
+  }
+  .icon-button.loading svg {
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes pulse { 50% { opacity:.45; } }
+  @media (max-width: 900px) {
+    .site-header {
+      padding: 0 24px;
+      height: 76px;
+    }
+    .main-nav {
+      position: absolute;
+      top: 76px;
+      left: 24px;
+      z-index: 3;
+      margin: 0;
+      gap: 18px;
+    }
+    .country-select select {
+      max-width: 90px;
+    }
+  }
+  @media (max-width: 520px) {
+    .country-select select {
+      max-width: 70px;
+    }
+    .country-select { display:none; }
+    .main-nav {
+      gap: 18px;
+    }
+    .icon-button {
+      display: none;
+    }
+    .user-button { min-width:190px; }
+    .user-summary { max-width:120px; }
+    .user-dropdown { width:min(310px,calc(100vw - 32px)); }
+    .login-button { padding:0 12px; }
+  }
+</style>

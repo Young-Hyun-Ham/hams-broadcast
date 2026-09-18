@@ -1,0 +1,32 @@
+{
+  "name": "hams-broadcast",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --port 3012",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.6",
+    "@google/genai": "^2.23.0",
+    "@hams-fam/sso-client": "^0.2.0",
+    "astro": "^7.3.3",
+    "firebase-admin": "^14.4.0",
+    "node-cron": "^4.6.0",
+    "zustand": "^5.0.15"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@types/node-cron": "^3.0.11",
+    "@typescript-eslint/parser": "^8.70.0",
+    "prettier-plugin-astro": "^1.0.0",
+    "typescript": "^6.0.3"
+  }
+}

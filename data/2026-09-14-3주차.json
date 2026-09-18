@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-09-17T05:11:01.606Z",
+  "weekStart": "2026-09-14",
+  "weekEnd": "2026-09-20",
+  "weekLabel": "2026-09-14-3주차",
+  "source": "Naver portal weekly schedule",
+  "channels": {
+    "KBS": [
+      {
+        "name": "인간극장 스페셜",
+        "date": "2026-09-16",
+        "dayIndex": 2,
+        "time": "13:10",
+        "episode": "방영 중",
+        "summary": "포털 편성표에서 줄거리를 제공하지 않습니다.",
+        "genre": "KBS · 네이버 편성표",
+        "sourceUrl": "https://search.naver.com/search.naver?where=nexearch&sm=tab_etc&mra=bjkw&pkid=57&os=659735&qvt=0&query=%EC%9D%B8%EA%B0%84%EA%B7%B9%EC%9E%A5",
+        "live": false,
+        "rerun": false
+      },
+      {
+        "name": "일일드라마 욕망의 덫",
+        "date": "2026-09-16",
+        "dayIndex": 2,
+        "time": "19:50",
+        "episode": "27회",
+        "summary": "포털 편성표에서 줄거리를 제공하지 않습니다.",
+        "genre": "KBS · 네이버 편성표",
+        "sourceUrl": "https://search.naver.com/search.naver?where=nexearch&sm=tab_etc&mra=bjkw&pkid=57&os=41574952&qvt=0&query=%EC%9A%95%EB%A7%9D%EC%9D%98%EB%8D%AB",
+        "live": false,
+        "rerun": false
+      },
+      {
+        "name": "토일 미니시리즈 너 말고 다른 연애",
+        "date": "2026-09-16",
+        "dayIndex": 2,
+        "time": "21:20",
+        "episode": "3회",
+        "summary": "포털 편성표에서 줄거리를 제공하지 않습니다.",
+        "genre": "KBS · 네이버 편성표",
+        "sourceUrl": "https://search.naver.com/search.naver?where=nexearch&sm=tab_etc&mra=bjkw&pkid=57&os=40933836&qvt=0&query=%EB%84%88%EB%A7%90%EA%B3%A0%EB%8B%A4%EB%A5%B8%EC%97%B0%EC%95%A0",
+        "live": false,
+        "rerun": false
+      },
+      {
+        "name": "주말드라마 사랑이 온다",
+        "date": "2026-09-16",
+        "dayIndex": 2,
+        "time": "20:00",
+        "episode": "17회",
+        "summary": "포털 편성표에서 줄거리를 제공하지 않습니다.",
+        "genre": "KBS · 네이버 편성표",
+        "sourceUrl": "https://search.naver.com/search.naver?where=nexearch&sm=tab_etc&mra=bjkw&pkid=57&os=41313358&qvt=0&query=%EC%82%AC%EB%9E%91%EC%9D%B4%EC%98%A8%EB%8B%A4",
+        "live": false,
+        "rerun": false
+      }
+    ],
+    "MBC": [],
+    "SBS": [],
+    "tvN": []
+  }
+}

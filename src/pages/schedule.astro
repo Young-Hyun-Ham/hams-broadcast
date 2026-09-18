@@ -1,0 +1,1058 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+---
+
+<Layout
+  title="전체 편성 — ON AIR"
+  description="국가별 오늘의 드라마 방송 편성을 방송사별로 확인하세요."
+>
+  <main>
+    <Header activePage="schedule" />
+    <section class="intro">
+      <div>
+        <span class="kicker">
+          <i></i>
+          <span data-i18n="kicker">오늘의 전체 편성</span>
+        </span>
+        <h1>
+          <span id="country-name">대한민국</span>
+          <br />
+          <em data-i18n="heading">모든 이야기</em>
+        </h1>
+      </div>
+      <div class="intro-side">
+        <p data-i18n="description">
+          방송사와 스트리밍 채널별로 오늘 방영되는 드라마를 확인하세요.
+        </p>
+        <div class="status">
+          <span></span>
+          <span data-i18n="auto">10분마다 자동 갱신</span>
+          <b id="updated">--:--</b>
+          <button id="refresh" data-i18n="refresh">
+            새로고침
+          </button>
+          <button id="generate" class="generate" data-i18n="generate" data-admin-only hidden>
+            수동 생성
+          </button>
+        </div>
+      </div>
+    </section>
+    <section class="schedule" aria-live="polite">
+      <div class="country-bar" aria-label="국가 선택">
+        <span data-i18n="chooseCountry">국가 선택</span>
+        <div id="country-buttons">
+          <button data-country="KR">🇰🇷 대한민국</button>
+          <button data-country="US">🇺🇸 United States</button>
+          <button data-country="JP">🇯🇵 日本</button>
+          <button data-country="GB">🇬🇧 United Kingdom</button>
+          <button data-country="FR">🇫🇷 France</button>
+          <button data-country="DE">🇩🇪 Deutschland</button>
+          <button data-country="ES">🇪🇸 España</button>
+          <button data-country="IT">🇮🇹 Italia</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <h2 data-i18n="channels">방송사별 편성</h2>
+        <div>
+          <button class="filter active" data-network="all" data-i18n="all">
+            전체
+          </button>
+          <span id="network-filters"></span>
+        </div>
+      </div>
+      <div class="day-bar" aria-label="요일 선택">
+        <button class="day-filter active" data-day="all">전체</button>
+        <button class="day-filter" data-day="0">월</button>
+        <button class="day-filter" data-day="1">화</button>
+        <button class="day-filter" data-day="2">수</button>
+        <button class="day-filter" data-day="3">목</button>
+        <button class="day-filter" data-day="4">금</button>
+        <button class="day-filter" data-day="5">토</button>
+        <button class="day-filter" data-day="6">일</button>
+      </div>
+      <div id="loading" class="loading">
+        <span></span>
+        <span data-i18n="loading">편성 정보를 불러오고 있어요</span>
+      </div>
+      <div id="schedule-groups"></div>
+      <div id="empty" class="empty" hidden>
+        <strong>NO SCHEDULE</strong>
+        <p data-i18n="empty">오늘 등록된 드라마 편성이 없습니다.</p>
+      </div>
+    </section>
+    <dialog id="drama-detail" class="drama-detail">
+      <button class="detail-close" id="detail-close" aria-label="닫기">×</button>
+      <div class="detail-poster" id="detail-poster"></div>
+      <div class="detail-copy">
+        <span class="detail-network" id="detail-network"></span>
+        <h2 id="detail-title"></h2>
+        <div class="detail-episode"><span data-i18n="currentEpisode">현재 방영 회차</span><strong id="detail-episode"></strong></div>
+        <div class="detail-credits">
+          <div id="detail-directors-wrap">
+            <h3>감독</h3>
+            <p id="detail-directors"></p>
+          </div>
+          <div id="detail-characters-wrap">
+            <h3>등장인물</h3>
+            <ul id="detail-characters"></ul>
+          </div>
+        </div>
+        <h3 data-i18n="synopsis">줄거리</h3>
+        <p id="detail-summary"></p>
+        <a id="detail-link" href="#" target="_blank" rel="noopener" data-i18n="officialPage">공식 페이지 보기</a>
+      </div>
+    </dialog>
+    <footer>
+      <a class="brand" href="/">
+        <span class="live-dot"></span>ON AIR
+      </a>
+      <span>© 2026 HAMS BROADCAST</span>
+    </footer>
+  </main>
+  <script>
+    const countries: any = {
+      KR: { ko: "대한민국", en: "South Korea", ja: "韓国", flag: "🇰🇷" },
+      US: { ko: "미국", en: "United States", ja: "アメリカ", flag: "🇺🇸" },
+      JP: { ko: "일본", en: "Japan", ja: "日本", flag: "🇯🇵" },
+      GB: { ko: "영국", en: "United Kingdom", ja: "イギリス", flag: "🇬🇧" },
+      FR: { ko: "프랑스", en: "France", ja: "フランス", flag: "🇫🇷" },
+      DE: { ko: "독일", en: "Germany", ja: "ドイツ", flag: "🇩🇪" },
+      ES: { ko: "스페인", en: "Spain", ja: "スペイン", flag: "🇪🇸" },
+      IT: { ko: "이탈리아", en: "Italy", ja: "イタリア", flag: "🇮🇹" },
+    };
+    const words: any = {
+      ko: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "전체 편성",
+        countryLabel: "국가 선택",
+        chooseCountry: "보고 싶은 국가",
+        kicker: "오늘의 전체 편성",
+        heading: "모든 이야기",
+        description:
+          "방송사와 스트리밍 채널별로 오늘 방영되는 드라마를 확인하세요.",
+        auto: "매주 월요일 00시 갱신",
+        refresh: "새로고침",
+        generate: "수동 생성",
+        generating: "생성 중...",
+        generated: "생성 완료",
+        generateFailed: "생성 실패",
+        channels: "방송사별 편성",
+        all: "전체",
+        loading: "편성 정보를 불러오고 있어요",
+        empty: "오늘 등록된 드라마 편성이 없습니다.",
+        noData: "현재 제공되는 편성 정보가 없습니다.",
+        episodes: "편",
+        currentEpisode: "현재 방영 회차",
+        synopsis: "줄거리",
+        officialPage: "공식 페이지 보기",
+        synopsisUnavailable: "제공된 줄거리 정보가 없습니다.",
+      },
+      en: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "FULL SCHEDULE",
+        countryLabel: "Select country",
+        chooseCountry: "Choose a country",
+        kicker: "TODAY'S FULL SCHEDULE",
+        heading: "every story",
+        description:
+          "Explore every drama airing today, grouped by network and streaming service.",
+        auto: "Updates every Monday at 00:00",
+        refresh: "Refresh",
+        generate: "Generate now",
+        generating: "Generating...",
+        generated: "Generated",
+        generateFailed: "Generation failed",
+        channels: "Schedule by network",
+        all: "All",
+        loading: "Loading the schedule",
+        empty: "No drama schedule is available today.",
+        noData: "Schedule data is not currently available.",
+        episodes: "shows",
+        currentEpisode: "Current episode",
+        synopsis: "Synopsis",
+        officialPage: "View official page",
+        synopsisUnavailable: "No synopsis is currently available.",
+      },
+      ja: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "全番組",
+        countryLabel: "国を選択",
+        chooseCountry: "国を選択",
+        kicker: "本日の全番組",
+        heading: "すべての物語",
+        description:
+          "今日放送されるドラマを放送局・配信サービス別に確認できます。",
+        auto: "毎週月曜0時に更新",
+        refresh: "更新",
+        generate: "手動生成",
+        generating: "生成中...",
+        generated: "生成完了",
+        generateFailed: "生成失敗",
+        channels: "放送局別の番組",
+        all: "すべて",
+        loading: "番組情報を読み込み中",
+        empty: "本日のドラマ番組はありません。",
+        noData: "現在、番組情報はありません。",
+        episodes: "作品",
+        currentEpisode: "現在の放送回",
+        synopsis: "あらすじ",
+        officialPage: "公式ページを見る",
+        synopsisUnavailable: "あらすじ情報はありません。",
+      },
+      fr: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "PROGRAMME COMPLET",
+        countryLabel: "Choisir un pays",
+        chooseCountry: "Choisir un pays",
+        kicker: "PROGRAMME DU JOUR",
+        heading: "toutes les histoires",
+        description:
+          "Découvrez les séries diffusées aujourd’hui, classées par chaîne et plateforme.",
+        auto: "Mise à jour chaque lundi à 00 h",
+        refresh: "Actualiser",
+        channels: "Programme par chaîne",
+        all: "Toutes",
+        loading: "Chargement du programme",
+        empty: "Aucune série n’est programmée aujourd’hui.",
+        noData: "Programme indisponible actuellement.",
+        episodes: "séries",
+        currentEpisode: "Épisode actuel",
+        synopsis: "Synopsis",
+        officialPage: "Voir la page officielle",
+        synopsisUnavailable: "Aucun synopsis disponible.",
+      },
+      de: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "GESAMTES PROGRAMM",
+        countryLabel: "Land auswählen",
+        chooseCountry: "Land auswählen",
+        kicker: "HEUTIGES PROGRAMM",
+        heading: "alle Geschichten",
+        description:
+          "Entdecke alle heute ausgestrahlten Serien, sortiert nach Sender und Streamingdienst.",
+        auto: "Aktualisierung montags um 00:00",
+        refresh: "Aktualisieren",
+        channels: "Programm nach Sender",
+        all: "Alle",
+        loading: "Programm wird geladen",
+        empty: "Heute sind keine Serien eingetragen.",
+        noData: "Derzeit sind keine Programmdaten verfügbar.",
+        episodes: "Serien",
+        currentEpisode: "Aktuelle Folge",
+        synopsis: "Handlung",
+        officialPage: "Offizielle Seite öffnen",
+        synopsisUnavailable: "Keine Inhaltsangabe verfügbar.",
+      },
+      es: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "PROGRAMACIÓN",
+        countryLabel: "Seleccionar país",
+        chooseCountry: "Selecciona un país",
+        kicker: "PROGRAMACIÓN DE HOY",
+        heading: "todas las historias",
+        description:
+          "Descubre las series de hoy agrupadas por canal y plataforma.",
+        auto: "Actualización cada lunes a las 00:00",
+        refresh: "Actualizar",
+        channels: "Programación por canal",
+        all: "Todos",
+        loading: "Cargando la programación",
+        empty: "No hay series programadas para hoy.",
+        noData: "La programación no está disponible.",
+        episodes: "series",
+        currentEpisode: "Episodio actual",
+        synopsis: "Sinopsis",
+        officialPage: "Ver página oficial",
+        synopsisUnavailable: "No hay sinopsis disponible.",
+      },
+      it: {
+        homeMenu: "TOP 5",
+        scheduleMenu: "PALINSESTO",
+        countryLabel: "Seleziona paese",
+        chooseCountry: "Scegli un paese",
+        kicker: "PALINSESTO DI OGGI",
+        heading: "tutte le storie",
+        description:
+          "Scopri le serie in onda oggi, raggruppate per canale e piattaforma.",
+        auto: "Aggiornamento ogni lunedì alle 00:00",
+        refresh: "Aggiorna",
+        channels: "Palinsesto per emittente",
+        all: "Tutti",
+        loading: "Caricamento del palinsesto",
+        empty: "Nessuna serie in programma oggi.",
+        noData: "Il palinsesto non è disponibile.",
+        episodes: "serie",
+        currentEpisode: "Episodio attuale",
+        synopsis: "Trama",
+        officialPage: "Vedi pagina ufficiale",
+        synopsisUnavailable: "Nessuna trama disponibile.",
+      },
+    };
+    const locale: any = (navigator.language || "ko").slice(0, 2);
+    const map: any = {
+      ko: "KR",
+      ja: "JP",
+      en: "US",
+      fr: "FR",
+      de: "DE",
+      es: "ES",
+      it: "IT",
+    };
+    const countryLanguages: any = {
+      KR: "ko",
+      US: "en",
+      JP: "ja",
+      GB: "en",
+      FR: "fr",
+      DE: "de",
+      ES: "es",
+      IT: "it",
+    };
+    const dayLabels: any = {
+      ko: ["전체", "월", "화", "수", "목", "금", "토", "일"],
+      en: ["All", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      ja: ["すべて", "月", "火", "水", "木", "金", "土", "日"],
+      fr: ["Tous", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+      de: ["Alle", "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+      es: ["Todos", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+      it: ["Tutti", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"],
+    };
+    let defaultCountry: any =
+      localStorage.getItem("hams-broadcast-country") || map[locale] || "US";
+    if (!countries[defaultCountry]) defaultCountry = "US";
+    let viewingCountry: any = defaultCountry;
+    let lang: any = countryLanguages[defaultCountry];
+    let selectedDay: any = "all";
+    let groups: any = {};
+    const container: any = document.querySelector("#schedule-groups");
+    const select: any = document.querySelector("#country");
+    const loading: any = document.querySelector("#loading");
+    const empty: any = document.querySelector("#empty");
+    const detail: any = document.querySelector("#drama-detail");
+    function translate() {
+      document.documentElement.lang = lang;
+      localStorage.setItem("hams-broadcast-locale", lang);
+      document.querySelectorAll("[data-i18n]").forEach((el: any) => {
+        const value = words[lang][el.dataset.i18n] || words.en[el.dataset.i18n];
+        if (value) el.textContent = value;
+      });
+      document.querySelectorAll(".day-filter").forEach((button, index) => {
+        button.textContent = dayLabels[lang][index];
+      });
+    }
+    const safe = (value = "") =>
+      String(value).replace(
+        /[&<>'"]/g,
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          } as Record<string, string>)[c],
+      );
+    const strip = (value = "") => {
+      const el = document.createElement("div");
+      el.innerHTML = value;
+      return el.textContent?.trim() || "";
+    };
+    function render(filter = "all") {
+      const entries = Object.entries(groups).filter(
+        ([network]) => filter === "all" || network === filter,
+      );
+      const detailItems = entries.flatMap(([network, shows]: any[]) =>
+        shows.map((show: any) => ({ ...show, network })),
+      );
+      empty.hidden = detailItems.length > 0;
+      container.innerHTML = detailItems.length
+        ? `<div class="programs">${detailItems.map((show, index) => `<button class="program-card" data-detail="${index}"><div class="thumb">${show.image ? `<img src="${safe(show.image)}" alt="" loading="lazy">` : `<span>ON AIR</span>`}<i>${safe(show.time || "--:--")}</i></div><strong class="program-network">${safe(show.network)}</strong><h4>${safe(show.name)}</h4></button>`).join("")}</div>`
+        : "";
+      document.querySelectorAll("[data-detail]").forEach((button: any) =>
+        button.addEventListener("click", () => openDetail(detailItems[Number(button.dataset.detail)])),
+      );
+    }
+    function openDetail(show: any) {
+      document.querySelector<HTMLElement>("#detail-network")!.textContent = `${show.network} · ${show.time || ""}`;
+      document.querySelector<HTMLElement>("#detail-title")!.textContent = show.name;
+      document.querySelector<HTMLElement>("#detail-episode")!.textContent = show.episode || (show.rank ? `TOP ${show.rank}` : "—");
+      document.querySelector<HTMLElement>("#detail-summary")!.textContent = show.summary || words[lang].synopsisUnavailable;
+      const directorNames: any = Array.isArray(show.directors) ? show.directors.filter(Boolean) : [];
+      const directorsWrap: any = document.querySelector("#detail-directors-wrap");
+      directorsWrap.hidden = directorNames.length === 0;
+      document.querySelector<HTMLElement>("#detail-directors")!.textContent = directorNames.join(", ");
+      const characterItems: any = Array.isArray(show.characters) && show.characters.length
+        ? show.characters.map((person: any) => ({ name: person.name, actor: person.actor, description: person.description }))
+        : (show.cast || []).map((person: any) => ({ name: person.roleName, actor: person.name, description: "" }));
+      const charactersWrap: any = document.querySelector("#detail-characters-wrap");
+      charactersWrap.hidden = characterItems.length === 0;
+      document.querySelector<HTMLElement>("#detail-characters")!.innerHTML = characterItems.map((person: any) =>
+        `<li><strong>${safe(person.name || "배역 미상")}</strong>${person.actor ? `<span>${safe(person.actor)}</span>` : ""}${person.description ? `<small>${safe(person.description)}</small>` : ""}</li>`
+      ).join("");
+      const poster: any = document.querySelector("#detail-poster");
+      poster.innerHTML = show.image ? `<img src="${safe(show.image)}" alt="${safe(show.name)}">` : `<span>${show.rank ? `TOP ${show.rank}` : "ON AIR"}</span>`;
+      const link: any = document.querySelector("#detail-link");
+      if (show.sourceUrl) { link.href = show.sourceUrl; link.hidden = false; } else { link.hidden = true; }
+      detail.showModal();
+    }
+    function filters() {
+      const target: any = document.querySelector("#network-filters");
+      const names: any = Object.keys(groups).sort((a, b) => {
+        const aNetflix = /netflix/i.test(a);
+        const bNetflix = /netflix/i.test(b);
+        if (aNetflix !== bNetflix) return aNetflix ? 1 : -1;
+        return a.localeCompare(b);
+      });
+      target.innerHTML = names
+        .map(
+          (name: any) =>
+            `<button class="filter" data-network="${safe(name)}">${safe(name)}</button>`,
+        )
+        .join("");
+      document.querySelectorAll(".filter").forEach((button: any) =>
+        button.addEventListener("click", () => {
+          document
+            .querySelectorAll(".filter")
+            .forEach((x) => x.classList.remove("active"));
+          button.classList.add("active");
+          render(button.dataset.network);
+        }),
+      );
+    }
+    const dayAliases = [
+      ["월", "월요일", "mon", "monday"],
+      ["화", "화요일", "tue", "tuesday"],
+      ["수", "수요일", "wed", "wednesday"],
+      ["목", "목요일", "thu", "thursday"],
+      ["금", "금요일", "fri", "friday"],
+      ["토", "토요일", "sat", "saturday"],
+      ["일", "일요일", "sun", "sunday"],
+    ];
+    function airsOnSelectedDay(show: any) {
+      if (selectedDay === "all") return true;
+      const aliases = dayAliases[Number(selectedDay)] || [];
+      return (show.airDays || []).some((day: any) => aliases.includes(String(day).toLowerCase()));
+    }
+    function deduplicateShows(shows: any) {
+      const unique = new Map();
+      for (const show of shows) {
+        const key = String(show.name || "")
+          .toLocaleLowerCase()
+          .replace(/^\[[^\]]+\]\s*/, "")
+          .replace(/\((?:재|본|재방)?[^)]*\)/g, "")
+          .replace(/\s+(?:시즌\s*)?\d+\s*(?:회|화|부)\s*$/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        unique.set(key, show);
+      }
+      return [...unique.values()];
+    }
+    async function load() {
+      loading.hidden = false;
+      empty.hidden = true;
+      container.innerHTML = "";
+      try {
+        const response = await fetch(`/api/drama?country=${viewingCountry}`);
+        if (!response.ok) throw new Error();
+        const weekly = await response.json();
+        groups = {};
+        for (const item of weekly.items || []) {
+          if (!airsOnSelectedDay(item)) continue;
+          const network = item.broadcaster || "Unknown";
+          if (!groups[network]) groups[network] = [];
+          groups[network].push({
+            ...item,
+            name: item.title,
+            time: [item.airDays?.join("·"), item.airTime].filter(Boolean).join(" "),
+            image: item.thumbnailUrl,
+            episode: item.slot,
+            summary: item.characters?.map((character: any) => character.description).filter(Boolean).join(" ") || item.slot,
+          });
+        }
+        for (const [network, shows] of Object.entries(groups)) {
+          groups[network] = deduplicateShows(shows);
+        }
+        groups = Object.fromEntries(
+          Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0])),
+        );
+        filters();
+        render();
+        document.querySelector<HTMLElement>("#updated")!.textContent = weekly.generatedAt
+          ? new Intl.DateTimeFormat(lang, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(weekly.generatedAt))
+          : "—";
+      } catch (_) {
+        empty.hidden = false;
+      } finally {
+        loading.hidden = true;
+      }
+    }
+    function setViewingCountry(value: any) {
+      viewingCountry = value;
+      const option = [...select.options].find((item) => item.value === value);
+      document.querySelector<HTMLElement>("#country-name")!.textContent =
+        option?.text || value;
+      document
+        .querySelectorAll("[data-country]")
+        .forEach((button: any) =>
+          button.classList.toggle(
+            "active",
+            button.dataset.country === viewingCountry,
+          ),
+        );
+      load();
+    }
+    function setDefaultCountry(value: any) {
+      defaultCountry = value;
+      lang = countryLanguages[defaultCountry];
+      localStorage.setItem("hams-broadcast-country", defaultCountry);
+      localStorage.setItem("hams-broadcast-locale", lang);
+      translate();
+      select.value = defaultCountry;
+      document.querySelector<HTMLElement>("#country-flag")!.textContent =
+        countries[defaultCountry].flag;
+      setViewingCountry(defaultCountry);
+    }
+    select.addEventListener("change", (e: any) => setDefaultCountry(e.target.value));
+    document
+      .querySelectorAll("[data-country]")
+      .forEach((button: any) =>
+        button.addEventListener("click", () =>
+          setViewingCountry(button.dataset.country),
+        ),
+      );
+    document.querySelectorAll(".day-filter").forEach((button: any) =>
+      button.addEventListener("click", () => {
+        selectedDay = button.dataset.day;
+        document.querySelectorAll(".day-filter").forEach((item: any) =>
+          item.classList.toggle("active", item === button),
+        );
+        load();
+      }),
+    );
+    document.querySelector("#refresh")?.addEventListener("click", load);
+    document.querySelector("#generate")?.addEventListener("click", async (event: any) => {
+      const button: any = event.currentTarget;
+      button.disabled = true;
+      button.textContent = words[lang].generating || words.en.generating;
+      try {
+        const response = await fetch("/api/drama/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ countryCode: viewingCountry }),
+        });
+        if (!response.ok) throw new Error();
+        button.textContent = words[lang].generated || words.en.generated;
+        await load();
+      } catch (_) {
+        button.textContent = words[lang].generateFailed || words.en.generateFailed;
+      } finally {
+        window.setTimeout(() => {
+          button.disabled = false;
+          button.textContent = words[lang].generate || words.en.generate;
+        }, 1800);
+      }
+    });
+    document.querySelector("#detail-close")?.addEventListener("click", () => detail.close());
+    detail.addEventListener("click", (event: any) => { if (event.target === detail) detail.close(); });
+    setDefaultCountry(defaultCountry);
+  </script>
+</Layout>
+<style is:global>
+  main {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 78% 0, rgba(116, 35, 28, 0.2), transparent 26%),
+      #080a0d;
+  }
+  .site-header {
+    max-width: 1440px;
+    height: 96px;
+    margin: auto;
+    padding: 0 54px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ffffff14;
+  }
+  .brand {
+    color: #f7f4ee;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .live-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ec3a2f;
+    box-shadow: 0 0 16px #ec3a2f;
+  }
+  .site-header nav {
+    display: flex;
+    gap: 30px;
+    margin-left: auto;
+    margin-right: 36px;
+  }
+  .site-header nav a {
+    color: #77736e;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 10px 0;
+    border-bottom: 1px solid transparent;
+  }
+  .site-header nav a.active,
+  .site-header nav a:hover {
+    color: #fff;
+    border-color: #e04b40;
+  }
+  .country-select {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 13px;
+    border: 1px solid #ffffff20;
+    background: #ffffff08;
+  }
+  .country-select select {
+    color: #e6e1d9;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: 600 13px inherit;
+  }
+  .country-select option {
+    background: #181a1d;
+  }
+  .intro {
+    max-width: 1332px;
+    margin: auto;
+    padding: 85px 0 74px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+  }
+  .kicker {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #99948d;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+  }
+  .kicker i {
+    width: 32px;
+    height: 1px;
+    background: #d1493e;
+  }
+  .intro h1 {
+    margin: 25px 0 0;
+    font-size: clamp(54px, 6vw, 88px);
+    line-height: 1;
+    letter-spacing: -0.06em;
+  }
+  .intro h1 em {
+    color: #d7c0a0;
+    font-family: Georgia, serif;
+    font-weight: 400;
+  }
+  .intro-side {
+    width: 500px;
+    flex: 0 0 500px;
+    padding-bottom: 7px;
+  }
+  .intro-side > p {
+    color: #99948d;
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: nowrap;
+  }
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 24px;
+    color: #6f6b66;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .status > span:first-child {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #e5483d;
+  }
+  .status b {
+    font-weight: 500;
+    color: #aaa49d;
+  }
+  .status button {
+    margin-left: auto;
+    border: 1px solid #ffffff20;
+    background: #ffffff08;
+    padding: 8px 11px;
+    cursor: pointer;
+  }
+  .status .generate {
+    margin-left: 0;
+    color: #fff;
+    border-color: #bd3e35;
+    background: #bd3e35;
+  }
+  .status button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+  .schedule {
+    max-width: 1332px;
+    margin: auto;
+    padding-bottom: 100px;
+  }
+  .country-bar {
+    border-top: 1px solid #ffffff1f;
+    padding: 28px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .country-bar > span {
+    font-size: 11px;
+    color: #77736e;
+    letter-spacing: 0.1em;
+    padding-top: 12px;
+  }
+  .country-bar > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+    max-width: 80%;
+  }
+  .country-bar button {
+    border: 1px solid #ffffff18;
+    background: #ffffff05;
+    color: #918c85;
+    padding: 10px 13px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .country-bar button:hover,
+  .country-bar button.active {
+    color: #fff;
+    background: #bd3e35;
+    border-color: #bd3e35;
+    box-shadow: 0 0 0 1px #bd3e3540;
+  }
+  .filter-bar {
+    border-top: 1px solid #ffffff1f;
+    padding: 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+  }
+  .filter-bar h2 {
+    font-size: 18px;
+    margin: 7px 0;
+  }
+  .filter-bar > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+    max-width: 75%;
+  }
+  .filter-bar span {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+  }
+  .filter {
+    white-space: nowrap;
+    border: 1px solid #ffffff18;
+    background: transparent;
+    color: #77736e;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .filter.active,
+  .filter:hover {
+    color: #fff;
+    background: #bd3e35;
+    border-color: #bd3e35;
+    box-shadow: inset 0 0 0 1px #ee746b;
+  }
+  .day-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+    padding: 0 0 25px;
+    border-bottom: 1px solid #ffffff12;
+    overflow-x: auto;
+  }
+  .day-filter {
+    min-width: 44px;
+    padding: 9px 12px;
+    border: 1px solid #ffffff18;
+    background: transparent;
+    color: #77736e;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .day-filter:hover,
+  .day-filter.active {
+    color: #fff;
+    border-color: #d7c0a0;
+    background: #d7c0a018;
+  }
+  .programs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 300px);
+    gap: 28px;
+    justify-content: start;
+    padding: 34px 0 48px;
+  }
+  .program-card {
+    display: block;
+    width: 300px;
+    padding: 0;
+    background: #101216;
+    border: 1px solid #ffffff0c;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .program-card:hover {
+    border-color: #d7c0a066;
+    transform: translateY(-2px);
+  }
+  .thumb {
+    width: 300px;
+    height: 400px;
+    position: relative;
+    background: #191c21;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    color: #5f5a54;
+    font-size: 10px;
+    line-height: 1.6;
+    text-align: center;
+    letter-spacing: 0.12em;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .thumb i {
+    position: absolute;
+    left: 7px;
+    bottom: 7px;
+    background: #080a0dcc;
+    padding: 5px 7px;
+    color: #fff;
+    font-size: 9px;
+    font-style: normal;
+  }
+  .programs h4 {
+    font-size: 16px;
+    margin: 0;
+    padding: 5px 15px 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .program-network {
+    display: block;
+    padding: 14px 15px 0;
+    color: #d7c0a0;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .chart-rank {
+    display: inline-block;
+    color: #e04b40;
+    font:
+      italic 25px Georgia,
+      serif;
+    margin-right: 10px;
+  }
+  .programs p {
+    font-size: 11px;
+    line-height: 1.55;
+    color: #85817b;
+    margin: 0 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .meta {
+    font-size: 10px;
+    color: #b49b73;
+  }
+  .drama-detail {
+    width: min(820px, calc(100% - 32px));
+    padding: 0;
+    border: 1px solid #ffffff1f;
+    background: #111317;
+    color: #f7f4ee;
+    grid-template-columns: minmax(230px, 38%) 1fr;
+    overflow: hidden;
+  }
+  .drama-detail[open] { display: grid; }
+  .drama-detail::backdrop { background: #000b; backdrop-filter: blur(5px); }
+  .detail-close { position:absolute;right:14px;top:12px;z-index:2;width:36px;height:36px;border:1px solid #ffffff24;background:#080a0dcc;color:#fff;font-size:24px;cursor:pointer; }
+  .detail-poster { min-height:440px;background:#191c21;display:grid;place-items:center;color:#77736e;letter-spacing:.14em; }
+  .detail-poster img { width:100%;height:100%;object-fit:cover; }
+  .detail-copy { max-height:80vh;padding:48px 42px;overflow-y:auto; }
+  .detail-network { color:#d7c0a0;font-size:11px;letter-spacing:.1em; }
+  .detail-copy h2 { margin:14px 0 28px;font-size:32px;line-height:1.2; }
+  .detail-episode { padding:15px 0;border-top:1px solid #ffffff16;border-bottom:1px solid #ffffff16;display:flex;justify-content:space-between;gap:20px;font-size:12px;color:#8d8881; }
+  .detail-episode strong { color:#fff;text-align:right; }
+  .detail-copy h3 { margin:30px 0 10px;font-size:12px;color:#d7c0a0; }
+  .detail-copy p { min-height:80px;margin:0 0 28px;color:#aaa59e;font-size:14px;line-height:1.8; }
+  .detail-credits { display:grid;grid-template-columns:1fr 2fr;gap:24px; }
+  .detail-credits h3 { margin-bottom:9px; }
+  .detail-credits p { min-height:0;margin:0;color:#ddd7ce;font-size:12px; }
+  .detail-credits ul { display:grid;gap:8px;margin:0;padding:0;list-style:none; }
+  .detail-credits li { display:grid;grid-template-columns:minmax(70px,auto) 1fr;gap:3px 10px;padding:8px 0;border-bottom:1px solid #ffffff0d;font-size:11px; }
+  .detail-credits li strong { color:#eee9e1; }.detail-credits li span{color:#a8a29a}.detail-credits li small{grid-column:1/-1;color:#716c66;line-height:1.5}
+  .detail-copy a { color:#fff;font-size:11px;text-decoration:none;border-bottom:1px solid #e04b40;padding-bottom:4px; }
+  .loading,
+  .empty {
+    text-align: center;
+    padding: 100px 20px;
+    color: #77736e;
+  }
+  .loading span:first-child {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ffffff25;
+    border-top-color: #e04b40;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 12px;
+    vertical-align: middle;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .empty strong {
+    display: block;
+    color: #ffffff0c;
+    font-size: 80px;
+  }
+  .empty p {
+    margin-top: -28px;
+  }
+  footer {
+    max-width: 1332px;
+    margin: auto;
+    border-top: 1px solid #ffffff14;
+    padding: 35px 0 50px;
+    display: flex;
+    justify-content: space-between;
+    color: #56534f;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  @media (max-width: 900px) {
+    .site-header {
+      height: 76px;
+      padding: 0 24px;
+    }
+    .site-header nav {
+      position: absolute;
+      top: 76px;
+      left: 24px;
+      margin: 0;
+      gap: 18px;
+    }
+    .country-select select {
+      max-width: 90px;
+    }
+    .intro {
+      padding: 100px 24px 55px;
+      display: block;
+    }
+    .intro-side {
+      width: auto;
+      max-width: 100%;
+      flex-basis: auto;
+      margin-top: 35px;
+    }
+    .intro-side > p {
+      white-space: normal;
+    }
+    .status {
+      flex-wrap: wrap;
+    }
+    .schedule {
+      padding: 0 24px 70px;
+    }
+    .country-bar {
+      display: block;
+    }
+    .country-bar > div {
+      max-width: 100%;
+      justify-content: flex-start;
+      margin-top: 15px;
+    }
+    .filter-bar {
+      display: block;
+    }
+    .filter-bar > div {
+      max-width: 100%;
+      padding-bottom: 10px;
+    }
+    .day-bar {
+      justify-content: flex-start;
+    }
+    .programs {
+      grid-template-columns: 1fr;
+    }
+    footer {
+      margin: 0 24px;
+    }
+    .empty strong {
+      font-size: 45px;
+    }
+  }
+  @media (max-width: 520px) {
+    .programs {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .program-card,
+    .thumb {
+      width: 100%;
+    }
+    .thumb {
+      height: auto;
+      aspect-ratio: 3 / 4;
+    }
+    .drama-detail[open] { display:block;max-height:90vh;overflow:auto; }
+    .detail-poster { min-height:260px;height:260px; }
+    .detail-copy { padding:30px 24px; }
+    .detail-credits { grid-template-columns:1fr;gap:0; }
+    .intro h1 {
+      font-size: 54px;
+    }
+  }
+</style>

@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+const error = Astro.url.searchParams.get("error");
+const returnTo = Astro.url.searchParams.get("returnTo") || "/";
+const messages: Record<string, string> = {
+  sso_state: "로그인 요청을 확인할 수 없습니다. 다시 시도해 주세요.",
+  sso_exchange: "인증 정보를 가져오지 못했습니다. 다시 시도해 주세요.",
+};
+---
+
+<Layout title="로그인 — ON AIR" description="HAMS 통합 계정으로 로그인합니다.">
+  <main class="login-page">
+    <a class="brand" href="/"><span></span>ON AIR</a>
+    <section>
+      <small>HAMS SSO</small>
+      <h1>다시 오신 것을<br />환영합니다.</h1>
+      <p class:list={{ error: Boolean(error) }}>{error ? messages[error] || "로그인을 완료하지 못했습니다." : "하나의 HAMS 계정으로 안전하게 연결됩니다."}</p>
+      <a class="login-action" href={`/api/sso/login?returnTo=${encodeURIComponent(returnTo)}`}>HAMS 계정으로 로그인</a>
+      <a class="back" href="/">로그인 없이 둘러보기</a>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .login-page{min-height:100vh;padding:42px;background:radial-gradient(circle at 75% 10%,rgba(116,35,28,.25),transparent 30%),#080a0d}.brand{display:flex;align-items:center;gap:12px;color:#f7f4ee;text-decoration:none;font-size:16px;font-weight:700;letter-spacing:.22em}.brand span{width:9px;height:9px;border-radius:50%;background:#ec3a2f;box-shadow:0 0 16px #ec3a2f}.login-page section{width:min(440px,100%);margin:14vh auto 0;padding:42px;border:1px solid #ffffff14;background:#101216}.login-page small{color:#d04a40;letter-spacing:.18em;font-weight:700}.login-page h1{margin:15px 0;font-size:42px;line-height:1.15;letter-spacing:-.04em}.login-page p{margin:0 0 30px;color:#89847d;font-size:13px;line-height:1.7}.login-page p.error{color:#e4786e}.login-action{display:block;padding:14px;background:#bd3e35;color:white;text-align:center;text-decoration:none;font-size:13px;font-weight:700}.back{display:block;margin-top:18px;color:#77736e;text-align:center;text-decoration:none;font-size:11px}@media(max-width:520px){.login-page{padding:24px}.login-page section{margin-top:12vh;padding:28px}.login-page h1{font-size:34px}}
+</style>
