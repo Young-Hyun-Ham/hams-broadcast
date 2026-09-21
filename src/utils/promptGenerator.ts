@@ -9,12 +9,15 @@ interface PromptOptions {
  */
 export function generateDramaPrompt({ countryCode }: PromptOptions): string {
   const code = countryCode.toUpperCase();
-  const requestedAt = new Intl.DateTimeFormat('en-CA', {
+  const requestedAtIso = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
+  const requestedAt = code === 'KR'
+    ? requestedAtIso.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1년 $2월 $3일')
+    : requestedAtIso;
 
   // 국가별 방송사 및 특이사항 설정
   const countryConfigs: Record<string, { countryName: string; broadcasters: string; notes: string }> = {
