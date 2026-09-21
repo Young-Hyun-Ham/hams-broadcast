@@ -1,0 +1,109 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+---
+
+<Layout title="콘텐츠 컬렉션 — ON AIR" description="카테고리별 방송 콘텐츠를 포스터와 장르별로 살펴보세요.">
+  <main>
+    <Header activePage="broadcasts" />
+    <section class="catalog-head" style="display: none;">
+      <div><span>CONTENT ARCHIVE</span><h1 id="catalog-title">드라마 컬렉션</h1></div>
+      <p>새롭게 등록된 작품을 포스터와 함께 살펴보세요.</p>
+    </section>
+    <section class="catalog" aria-live="polite">
+      <div class="catalog-tools">
+        <label><span class="sr-only">드라마 검색</span><input id="catalog-search" type="search" placeholder="제목 또는 장르 검색" /></label>
+        <span id="catalog-count">목록을 불러오는 중</span>
+      </div>
+      <div class="catalog-grid" id="catalog-grid" aria-busy="true">
+        {Array.from({ length: 12 }, () => <div class="skeleton"></div>)}
+      </div>
+      <div class="catalog-error" id="catalog-error" hidden>
+        <strong>목록을 불러오지 못했습니다.</strong><p></p><button type="button">다시 시도</button>
+      </div>
+      <nav class="pagination" id="pagination" aria-label="드라마 목록 페이지"></nav>
+      <p class="source-note">목록 메타데이터 출처: tvhot2.com · 영상 및 재생 링크는 제공하지 않습니다.</p>
+    </section>
+    <dialog class="catalog-detail" id="catalog-detail">
+      <button class="detail-close" type="button" aria-label="상세정보 닫기">×</button>
+      <div id="detail-content"></div>
+    </dialog>
+  </main>
+  <script>
+    type Broadcast = { catalogDocumentId: string; itemDocumentId: string; title: string; thumbnailUrl: string; hasThumbnailImageData?: boolean; genres: string[]; rating: number | null; isUpdated: boolean };
+    const categoryTitles:Record<string,string>={"korean-movie":"한국영화","foreign-movie":"해외영화",drama:"드라마","foreign-drama":"해외드라마",entertainment:"예능",anime:"일반애니","anime-movie":"극장판 애니","old-drama":"추억의 드라마",documentary:"시사/다큐","old-entertainment":"추억의 예능","foreign-entertainment":"해외(예능/다큐)"};
+    const category=new URLSearchParams(location.search).get("category")||"drama";
+    document.querySelector("#catalog-title")!.textContent=`${categoryTitles[category]||"드라마"} 컬렉션`;
+    const grid = document.querySelector<HTMLElement>("#catalog-grid")!;
+    const pagination = document.querySelector<HTMLElement>("#pagination")!;
+    const count = document.querySelector<HTMLElement>("#catalog-count")!;
+    const search = document.querySelector<HTMLInputElement>("#catalog-search")!;
+    const errorBox = document.querySelector<HTMLElement>("#catalog-error")!;
+    const refresh = document.querySelector<HTMLButtonElement>("#refresh");
+    const detail = document.querySelector<HTMLDialogElement>("#catalog-detail")!;
+    const detailContent = document.querySelector<HTMLElement>("#detail-content")!;
+    let items: Broadcast[] = [];
+    let currentPage = 1;
+    const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char] || char);
+    const thumbnailSrc = (item: Broadcast) => item.hasThumbnailImageData ? `/api/catalog/thumbnail?category=${encodeURIComponent(category)}&documentId=${encodeURIComponent(item.catalogDocumentId)}&itemId=${encodeURIComponent(item.itemDocumentId)}` : item.thumbnailUrl;
+
+    function renderItems() {
+      const keyword = search.value.trim().toLocaleLowerCase();
+      const filtered = items.filter((item) => !keyword || `${item.title} ${item.genres.join(" ")}`.toLocaleLowerCase().includes(keyword));
+      count.textContent = `${filtered.length}개 작품`;
+      grid.innerHTML = filtered.length ? filtered.map((item) => {const image=thumbnailSrc(item);return `<article class="catalog-card"><button type="button" class="card-open" data-document-id="${escapeHtml(item.catalogDocumentId)}" data-item-id="${escapeHtml(item.itemDocumentId)}" data-title="${escapeHtml(item.title)}" data-poster="${escapeHtml(image)}"><div class="catalog-poster"><img src="${escapeHtml(image)}" alt="${escapeHtml(item.title)} 포스터" loading="lazy">${item.isUpdated ? '<span class="update-badge">UPDATE</span>' : ""}${item.rating !== null ? `<span class="rating">★ ${item.rating.toFixed(1)}</span>` : ""}</div><div class="catalog-copy"><h2>${escapeHtml(item.title)}</h2><p>${item.genres.map(escapeHtml).join(" · ") || "장르 정보 없음"}</p></div></button></article>`;}).join("") : '<p class="empty-result">검색 결과가 없습니다.</p>';
+      grid.querySelectorAll<HTMLButtonElement>(".card-open").forEach((button) => button.addEventListener("click", () => openDetail(button)));
+    }
+    async function openDetail(button: HTMLButtonElement) {
+      const title = button.dataset.title || "드라마 상세정보";
+      const poster = button.dataset.poster || "";
+      detailContent.innerHTML = `<div class="detail-loading"><span></span>상세정보를 불러오는 중</div>`;
+      detail.showModal();
+      try {
+        const response = await fetch(`/api/catalog/detail?category=${encodeURIComponent(category)}&documentId=${encodeURIComponent(button.dataset.documentId || "")}&itemId=${encodeURIComponent(button.dataset.itemId || "")}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "상세정보 요청에 실패했습니다.");
+        const info = Object.entries(data.information || {}).map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join("");
+        const people = data.cast?.length ? data.cast : (data.characters || []).map((person: { actor?: string; imageUrl?: string }) => ({ name: person.actor || "", imageUrl: person.imageUrl || "" }));
+        const cast = people.map((person: { name: string; imageUrl: string }) => `<li>${person.imageUrl ? `<img src="${escapeHtml(person.imageUrl)}" alt="" loading="lazy">` : '<span class="cast-empty"></span>'}<strong>${escapeHtml(person.name)}</strong></li>`).join("");
+        detailContent.innerHTML = `<div class="detail-layout"><div class="detail-poster"><img src="${escapeHtml(data.posterUrl || poster)}" alt="${escapeHtml(title)} 포스터"></div><div class="detail-copy"><span class="detail-kicker">DRAMA INFORMATION</span><h2>${escapeHtml(title)}</h2><div class="detail-genres">${(data.genres || []).map((genre: string) => `<span>${escapeHtml(genre)}</span>`).join("")}</div>${info ? `<dl class="detail-info">${info}</dl>` : ""}<h3>줄거리</h3><p>${escapeHtml(data.synopsis || "제공된 줄거리 정보가 없습니다.")}</p>${cast ? `<h3>등장인물 · 출연진</h3><ul class="detail-cast">${cast}</ul>` : ""}</div></div>`;
+      } catch (error) {
+        detailContent.innerHTML = `<div class="detail-error"><strong>상세정보를 불러오지 못했습니다.</strong><p>${escapeHtml(error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요.")}</p></div>`;
+      }
+    }
+    function renderPagination(totalPages: number) {
+      const start = Math.max(1, Math.min(currentPage - 4, totalPages - 9));
+      const end = Math.min(totalPages, start + 9);
+      const pages = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+      pagination.innerHTML = `<button data-page="${Math.max(1, currentPage - 1)}" ${currentPage === 1 ? "disabled" : ""}>이전</button>${pages.map((page) => `<button data-page="${page}" class="${page === currentPage ? "active" : ""}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`).join("")}<button data-page="${Math.min(totalPages, currentPage + 1)}" ${currentPage === totalPages ? "disabled" : ""}>다음</button>`;
+      pagination.querySelectorAll<HTMLButtonElement>("[data-page]").forEach((button) => button.addEventListener("click", () => load(Number(button.dataset.page))));
+    }
+    async function load(page = currentPage) {
+      currentPage = page; errorBox.hidden = true; grid.hidden = false; grid.setAttribute("aria-busy", "true");
+      refresh?.classList.add("loading");
+      grid.innerHTML = Array.from({ length: 12 }, () => '<div class="skeleton"></div>').join("");
+      try {
+        const response = await fetch(`/api/catalog/items?category=${encodeURIComponent(category)}&page=${page}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "목록 요청에 실패했습니다.");
+        items = data.items; renderItems(); renderPagination(data.totalPages); history.replaceState(null, "", `/broadcasts?category=${encodeURIComponent(category)}${page===1?"":`&page=${page}`}`);
+      } catch (error) {
+        grid.hidden = true; errorBox.hidden = false;
+        errorBox.querySelector("p")!.textContent = error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요.";
+      } finally { grid.setAttribute("aria-busy", "false"); refresh?.classList.remove("loading"); }
+    }
+    search.addEventListener("input", renderItems);
+    errorBox.querySelector("button")!.addEventListener("click", () => load());
+    refresh?.addEventListener("click", () => load());
+    detail.querySelector<HTMLButtonElement>(".detail-close")!.addEventListener("click", () => detail.close());
+    detail.addEventListener("click", (event) => { if (event.target === detail) detail.close(); });
+    load(Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1));
+  </script>
+</Layout>
+
+<style is:global>
+  main{min-height:100vh;background:radial-gradient(circle at 85% 5%,#5d211b33,transparent 28%),#080a0d}.catalog-head,.catalog{max-width:1332px;margin:auto}.catalog-head{display:flex;align-items:end;justify-content:space-between;padding:82px 0 55px;border-bottom:1px solid #ffffff1a}.catalog-head span{color:#d04a40;font-size:10px;font-weight:700;letter-spacing:.2em}.catalog-head h1{margin:15px 0 0;font-size:clamp(42px,6vw,76px);letter-spacing:-.06em}.catalog-head p{max-width:330px;margin:0;color:#8f8a83;font-size:14px;line-height:1.8}.catalog{padding:28px 0 80px}.catalog-tools{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}.catalog-tools input{width:min(360px,70vw);height:44px;padding:0 15px;border:1px solid #ffffff20;background:#ffffff08;color:#f7f4ee;outline:none}.catalog-tools input:focus{border-color:#bd3e35}.catalog-tools>span{color:#77736e;font-size:11px}.catalog-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:28px 14px}.catalog-card{min-width:0}.card-open{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left;cursor:pointer}.catalog-poster{position:relative;aspect-ratio:2/3;overflow:hidden;background:#17191d}.catalog-poster img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .35s,filter .35s}.catalog-card:hover img{transform:scale(1.035);filter:saturate(1.08)}.update-badge,.rating{position:absolute;top:9px;padding:5px 7px;background:#090b0ddd;font-size:8px;font-weight:800;letter-spacing:.08em}.update-badge{left:9px;color:#fff;background:#bd3e35}.rating{right:9px;color:#d7c0a0}.catalog-copy{padding:13px 2px}.catalog-copy h2{overflow:hidden;margin:0;color:#f2eee8;font-size:15px;text-overflow:ellipsis;white-space:nowrap}.catalog-copy p{overflow:hidden;margin:7px 0 0;color:#77736e;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.skeleton{aspect-ratio:2/3;background:linear-gradient(100deg,#131519 30%,#1c1f24 50%,#131519 70%);background-size:250% 100%;animation:skeleton 1.2s infinite}.empty-result{grid-column:1/-1;padding:90px;text-align:center;color:#77736e}.catalog-error{padding:100px 20px;text-align:center;color:#77736e}.catalog-error strong{color:#eee8df}.catalog-error button{padding:10px 15px;border:1px solid #ffffff20;background:#ffffff08;color:#fff;cursor:pointer}.pagination{display:flex;justify-content:center;gap:7px;margin-top:55px}.pagination button{min-width:38px;height:38px;border:1px solid #ffffff18;background:#ffffff05;color:#858079;cursor:pointer}.pagination button.active{border-color:#bd3e35;background:#bd3e35;color:#fff}.pagination button:disabled{cursor:default;opacity:.3}.source-note{margin:35px 0 0;color:#4f4b47;font-size:9px;text-align:center}.catalog-detail{width:min(980px,calc(100% - 32px));height:min(510px,88vh);padding:0;border:1px solid #ffffff20;background:#111317;color:#f7f4ee;overflow:hidden}.catalog-detail::backdrop{background:#000c;backdrop-filter:blur(5px)}.detail-close{position:fixed;z-index:3;margin:14px 0 0 min(920px,calc(100% - 78px));width:38px;height:38px;border:1px solid #ffffff25;background:#090b0ddd;color:#fff;font-size:24px;cursor:pointer}.detail-layout{display:grid;height:100%;grid-template-columns:340px 1fr}.detail-poster{min-height:0;display:grid;place-items:center;background:#090b0e}.detail-poster img{display:block;width:100%;height:100%;object-fit:contain}.detail-copy{min-height:0;padding:48px 46px;overflow-y:auto}.detail-kicker{color:#c64a40;font-size:9px;font-weight:800;letter-spacing:.18em}.detail-copy h2{margin:12px 0 14px;font-size:32px}.detail-genres{display:flex;flex-wrap:wrap;gap:6px}.detail-genres span{padding:6px 9px;background:#ffffff0a;color:#aaa49c;font-size:9px}.detail-info{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:26px 0;background:#ffffff10}.detail-info>div{padding:13px;background:#111317}.detail-info dt{color:#6f6b65;font-size:9px}.detail-info dd{margin:6px 0 0;color:#e3ded6;font-size:11px}.detail-copy h3{margin:28px 0 10px;color:#d7c0a0;font-size:11px}.detail-copy>p{margin:0;color:#aaa49c;font-size:13px;line-height:1.8}.detail-cast{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}.detail-cast li{min-width:0}.detail-cast img,.cast-empty{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#1a1c20}.detail-cast strong{display:block;overflow:hidden;margin-top:7px;font-size:10px;text-align:center;text-overflow:ellipsis;white-space:nowrap}.detail-loading,.detail-error{min-height:420px;display:grid;place-items:center;padding:50px;color:#77736e}.detail-loading span{width:22px;height:22px;border:2px solid #ffffff20;border-top-color:#bd3e35;border-radius:50%;animation:spin .8s linear infinite}.detail-error{text-align:center}@keyframes skeleton{to{background-position:-250% 0}}
+  #detail-content{height:100%;min-height:0}.detail-layout{min-height:0}.detail-poster{height:100%;overflow:hidden}.detail-poster img{width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}.detail-copy{height:100%;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#6d3934 #191b1f}
+  @media(max-width:900px){.catalog-head,.catalog{margin:0 24px}.catalog-head{padding-top:110px}.catalog-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:24px 10px}.catalog-copy h2{font-size:13px}}
+  @media(max-width:560px){.catalog-head{display:block;padding:105px 0 35px}.catalog-head p{margin-top:20px}.catalog{padding-top:20px}.catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 8px}.catalog-copy{padding-top:9px}.catalog-copy h2{font-size:11px}.catalog-copy p{font-size:8px}.catalog-tools{align-items:flex-end}.catalog-tools input{width:65vw}.pagination{flex-wrap:wrap;gap:4px}.pagination button{min-width:32px;height:34px}.catalog-detail{height:auto;max-height:88vh;overflow:auto}#detail-content{height:auto}.detail-layout{display:block;height:auto}.detail-poster{height:300px;min-height:0}.detail-poster img{object-fit:contain}.detail-copy{height:auto;padding:30px 22px;overflow:visible}.detail-info{grid-template-columns:1fr 1fr}.detail-cast{grid-template-columns:repeat(3,minmax(0,1fr))}.detail-close{right:24px;margin-left:0}}
+</style>

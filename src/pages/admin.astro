@@ -2,20 +2,30 @@
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import { isAdminRequest } from "../lib/adminAuth";
+import KoreanMoviePanel from "../components/admin/catalog/KoreanMoviePanel.astro";
+import ForeignMoviePanel from "../components/admin/catalog/ForeignMoviePanel.astro";
+import ForeignDramaPanel from "../components/admin/catalog/ForeignDramaPanel.astro";
+import EntertainmentPanel from "../components/admin/catalog/EntertainmentPanel.astro";
+import AnimePanel from "../components/admin/catalog/AnimePanel.astro";
+import AnimeMoviePanel from "../components/admin/catalog/AnimeMoviePanel.astro";
+import OldDramaPanel from "../components/admin/catalog/OldDramaPanel.astro";
+import DocumentaryPanel from "../components/admin/catalog/DocumentaryPanel.astro";
+import OldEntertainmentPanel from "../components/admin/catalog/OldEntertainmentPanel.astro";
+import ForeignEntertainmentPanel from "../components/admin/catalog/ForeignEntertainmentPanel.astro";
 
 if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
 ---
 
-<Layout title="방송 편성 관리 — ON AIR" description="저장된 방송 편성표를 관리합니다.">
+<Layout title="관리자 대시보드 — ON AIR" description="콘텐츠 수집과 방송 편성 데이터를 관리합니다.">
   <main>
     <Header activePage="admin" />
-    <section class="admin-head">
+    <section class="admin-head" style="display: none;">
       <div>
         <span>ADMINISTRATION</span>
-        <h1>방송 편성 관리</h1>
-        <p>현재 주차에 저장된 드라마 편성을 추가, 수정하거나 삭제합니다.</p>
+        <h1>관리자 대시보드</h1>
+        <p>콘텐츠 수집 주소와 드라마·애니·전체 편성표 데이터를 관리합니다.</p>
       </div>
-      <label>
+      <label id="schedule-country-control" hidden>
         관리 국가
         <select id="admin-country">
           <option value="KR">대한민국</option><option value="US">United States</option>
@@ -24,7 +34,55 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
           <option value="ES">España</option><option value="IT">Italia</option>
         </select>
       </label>
+    </section> 
+
+    <nav class="admin-tabs" aria-label="관리자 메뉴">
+      <button type="button" class="active" data-admin-tab="dashboard">대시보드</button><button type="button" data-admin-tab="korean-movie">한국영화</button><button type="button" data-admin-tab="foreign-movie">해외영화</button><button type="button" data-admin-tab="catalog-drama">드라마</button><button type="button" data-admin-tab="foreign-drama">해외드라마</button><button type="button" data-admin-tab="entertainment">예능</button><button type="button" data-admin-tab="anime">일반애니</button><button type="button" data-admin-tab="anime-movie">극장판 애니</button><button type="button" data-admin-tab="old-drama">추억의 드라마</button><button type="button" data-admin-tab="documentary">시사/다큐</button><button type="button" data-admin-tab="old-entertainment">추억의 예능</button><button type="button" data-admin-tab="foreign-entertainment">해외(예능/다큐)</button><button type="button" data-admin-tab="schedule">전체편성</button>
+    </nav>
+
+    <section class="tab-panel dashboard-panel" id="panel-dashboard">
+      <div class="section-title"><div><span>CRAWLER SOURCES</span><h2>크롤링 주소 관리</h2></div><div class="source-actions"><button type="button" class="primary" id="save-sources">설정 저장</button><p class="dashboard-message" id="source-message" role="status"></p></div></div>
+      <div class="source-grid">
+        <label>드라마 크롤링 주소<div><input id="source-drama" type="url" placeholder="https://example.com"><button type="button" data-validate-source="drama">검증</button></div><small data-source-status="drama"></small></label>
+        <label>추억의 드라마 크롤링 주소<div><input id="source-oldDrama" type="url" placeholder="https://example.com"><button type="button" data-validate-source="oldDrama">검증</button></div><small data-source-status="oldDrama"></small></label>
+        <label>예능 크롤링 주소<div><input id="source-entertainment" type="url" placeholder="https://example.com"><button type="button" data-validate-source="entertainment">검증</button></div><small data-source-status="entertainment"></small></label>
+        <label>시사/다큐 크롤링 주소<div><input id="source-currentAffairs" type="url" placeholder="https://example.com"><button type="button" data-validate-source="currentAffairs">검증</button></div><small data-source-status="currentAffairs"></small></label>
+        <label>추억의 예능 크롤링 주소<div><input id="source-oldEntertainment" type="url" placeholder="https://example.com"><button type="button" data-validate-source="oldEntertainment">검증</button></div><small data-source-status="oldEntertainment"></small></label>
+        <label>해외드라마 크롤링 주소<div><input id="source-worldDrama" type="url" placeholder="https://example.com"><button type="button" data-validate-source="worldDrama">검증</button></div><small data-source-status="worldDrama"></small></label>
+        <label>해외(예능/다큐) 크롤링 주소<div><input id="source-overseasEntertainment" type="url" placeholder="https://example.com"><button type="button" data-validate-source="overseasEntertainment">검증</button></div><small data-source-status="overseasEntertainment"></small></label>
+        <label>일반애니 크롤링 주소<div><input id="source-generalAnime" type="url" placeholder="https://example.com"><button type="button" data-validate-source="generalAnime">검증</button></div><small data-source-status="generalAnime"></small></label>
+        <label>극장판애니 크롤링 주소<div><input id="source-animatedMovie" type="url" placeholder="https://example.com"><button type="button" data-validate-source="animatedMovie">검증</button></div><small data-source-status="animatedMovie"></small></label>
+        <label>한국영화 크롤링 주소<div><input id="source-koreanMovie" type="url" placeholder="https://example.com"><button type="button" data-validate-source="koreanMovie">검증</button></div><small data-source-status="koreanMovie"></small></label>
+        <label>외국영화 크롤링 주소<div><input id="source-foreignMovie" type="url" placeholder="https://example.com"><button type="button" data-validate-source="foreignMovie">검증</button></div><small data-source-status="foreignMovie"></small></label>
+      </div>
     </section>
+
+    <KoreanMoviePanel />
+    <ForeignMoviePanel />
+    <section class="tab-panel catalog-admin" id="panel-catalog-drama" hidden>
+      <div class="catalog-admin-head"><div><span>DRAMA CATALOG</span><h2>드라마 데이터 관리</h2><p>최신 생성 문서의 드라마를 추가, 수정하거나 삭제합니다.</p></div><button type="button" class="primary" id="generate-catalog">드라마 수동 생성</button></div>
+      <div class="catalog-admin-grid">
+        <form class="catalog-editor" id="catalog-form">
+          <input type="hidden" id="catalog-id"><h3 id="catalog-form-title">드라마 추가</h3>
+          <label>제목<input id="catalog-title" required></label>
+          <label>썸네일 URL<input id="catalog-thumbnail" type="url"></label>
+          <div class="fields two"><label>장르<input id="catalog-genres" placeholder="드라마, 코미디"></label><label>평점<input id="catalog-rating" type="number" min="0" max="10" step="0.1"></label></div>
+          <label>줄거리<textarea id="catalog-synopsis" rows="5"></textarea></label>
+          <section class="catalog-characters-field">
+            <div class="catalog-characters-head"><span>등장인물</span><button type="button" id="catalog-character-add">추가</button></div>
+            <div id="catalog-characters"></div>
+          </section>
+          <label class="check-field"><input id="catalog-updated" type="checkbox"> 업데이트 작품</label>
+          <div class="form-actions"><button type="button" class="text-button" id="catalog-reset">초기화</button><button type="submit" class="primary">저장</button></div>
+        </form>
+        <section class="catalog-list-panel"><div class="section-title"><div><span id="catalog-document">LATEST DOCUMENT</span><h2>드라마 목록</h2></div><div class="catalog-list-tools"><strong id="catalog-total">0개</strong><button type="button" id="catalog-thumbnails-store">썸네일 이미지 저장</button><button type="button" id="catalog-characters-update-all">전체 등장인물 업데이트</button></div></div><form class="catalog-search" id="catalog-search-form"><label><span class="sr-only">드라마 제목 검색</span><input id="catalog-search-input" placeholder="드라마 제목 입력"></label><button type="submit">검색</button><button type="button" id="catalog-search-reset" hidden>전체목록</button></form><div id="catalog-admin-list" class="catalog-admin-list"></div><div class="admin-pager" id="catalog-pagination"></div></section>
+      </div>
+      <p class="dashboard-message" id="catalog-message" role="status"></p>
+    </section>
+
+    <ForeignDramaPanel /><EntertainmentPanel /><AnimePanel /><AnimeMoviePanel /><OldDramaPanel /><DocumentaryPanel /><OldEntertainmentPanel /><ForeignEntertainmentPanel />
+
+    <div class="tab-panel" id="panel-schedule" hidden>
 
     <section class="week-panel" id="week-panel">
       <div class="section-title">
@@ -49,12 +107,12 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
     </section>
 
     <section class="admin-grid" id="schedule-editor" hidden>
-      <form id="drama-form" class="editor">
+      <form id="broadcast-form" class="editor">
         <div class="section-title">
           <div><span id="form-mode">NEW PROGRAM</span><h2 id="form-title">편성 추가</h2></div>
           <button type="button" id="reset-form" class="text-button" hidden>신규 등록으로 전환</button>
         </div>
-        <input id="drama-id" type="hidden" />
+        <input id="broadcast-id" type="hidden" />
         <div class="fields two">
           <label>방송사 / 채널 <input id="broadcaster" name="broadcaster" required placeholder="예: tvN" /></label>
           <label>드라마 제목 <input id="title" name="title" required placeholder="드라마 제목" /></label>
@@ -99,16 +157,135 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
         </div>
         <div id="loading" class="notice">편성표를 불러오는 중입니다.</div>
         <div id="empty" class="notice" hidden>저장된 편성이 없습니다.</div>
-        <div id="drama-list" class="drama-list"></div>
+        <div id="broadcast-list" class="broadcast-list"></div>
       </section>
     </section>
+    </div>
   </main>
 
   <script>
+    const tabButtons = document.querySelectorAll<HTMLButtonElement>("[data-admin-tab]");
+    const tabPanels = document.querySelectorAll<HTMLElement>(".tab-panel");
+    const countryControl = document.querySelector<HTMLElement>("#schedule-country-control")!;
+    function activateTab(name: string) {
+      tabButtons.forEach((button) => button.classList.toggle("active", button.dataset.adminTab === name));
+      tabPanels.forEach((panel) => { panel.hidden = panel.id !== `panel-${name}`; });
+      countryControl.hidden = name !== "schedule";
+      if (name === "catalog-drama") loadCatalogItems();
+      document.querySelector<HTMLElement>(`#panel-${name}.catalog-module`)?.dispatchEvent(new CustomEvent("catalog:load"));
+    }
+    tabButtons.forEach((button) => button.addEventListener("click", () => activateTab(button.dataset.adminTab || "dashboard")));
+    activateTab("dashboard");
+    document.querySelectorAll<HTMLElement>(".catalog-module").forEach((panel) => {
+      const generate = panel.querySelector<HTMLButtonElement>('[data-action="generate"]')!;
+      const message = panel.querySelector<HTMLElement>('[data-role="message"]')!;
+      const list = panel.querySelector<HTMLElement>('[data-role="list"]')!;
+      const pager = panel.querySelector<HTMLElement>('[data-role="pagination"]')!;
+      const queryInput = panel.querySelector<HTMLInputElement>('[data-field="query"]')!;
+      const form = panel.querySelector<HTMLFormElement>('[data-role="form"]')!;
+      const charactersBox = panel.querySelector<HTMLElement>('[data-role="characters"]')!;
+      let page = 1; let total = 0; let query = ""; let documentId = ""; let currentItems:any[] = [];
+      const field = <T extends HTMLInputElement|HTMLTextAreaElement>(name:string) => panel.querySelector<T>(`[data-field="${name}"]`)!;
+      const addCharacter = (person:any={}) => {const row=document.createElement("div");row.className="catalog-character-row";row.innerHTML=`<div class="catalog-character-names"><label><span>이름</span><input data-character-name value="${escapeHtml(person.name||"")}"></label><label><span>배우 이름</span><input data-character-actor value="${escapeHtml(person.actor||"")}"></label></div><label class="catalog-character-image"><span>이미지 URL</span><input data-character-image type="url" value="${escapeHtml(person.imageUrl||"")}"></label><button type="button" class="danger" data-character-remove>삭제</button>`;row.querySelector("[data-character-remove]")!.addEventListener("click",()=>row.remove());charactersBox.append(row);};
+      const resetForm = () => {form.reset();charactersBox.replaceChildren();field("id").value="";panel.querySelector<HTMLElement>('[data-role="form-title"]')!.textContent=`${panel.dataset.catalogTitle} 추가`;};
+      const editItem = (item:any) => {field("id").value=item.id;field("title").value=item.title||"";field("thumbnailUrl").value=item.thumbnailUrl||"";field("genres").value=(item.genres||[]).join(", ");field("rating").value=item.rating==null?"":String(item.rating);field("synopsis").value=item.synopsis||"";field<HTMLInputElement>("isUpdated").checked=Boolean(item.isUpdated);charactersBox.replaceChildren();(item.characters||[]).forEach(addCharacter);panel.querySelector<HTMLElement>('[data-role="form-title"]')!.textContent=`${panel.dataset.catalogTitle} 수정`;form.scrollIntoView({behavior:"smooth",block:"start"});};
+      const load = async () => {
+        list.innerHTML='<div class="notice">목록을 불러오는 중입니다.</div>';
+        try {
+          const category=panel.dataset.catalogCategory||"";const response=await fetch(`/api/admin/catalog-items?category=${encodeURIComponent(category)}&page=${page}&q=${encodeURIComponent(query)}`);const data=await response.json();if(!response.ok)throw new Error(data.error);
+          total=data.total||0;documentId=data.documentId||"";currentItems=data.items||[];panel.querySelector<HTMLElement>('[data-role="document"]')!.textContent=query?`SEARCH · ${query}`:(documentId||"LATEST DOCUMENT");panel.querySelector<HTMLElement>('[data-role="total"]')!.textContent=`${total}개`;panel.querySelector<HTMLButtonElement>('[data-action="search-reset"]')!.hidden=!query;
+          list.innerHTML=currentItems.map((item:any)=>`<article><div class="catalog-row-thumb">${item.thumbnailUrl?`<img src="${escapeHtml(item.thumbnailUrl)}" alt="">`:"NO IMAGE"}</div><div><h3>${escapeHtml(item.title||"제목 없음")}</h3><p>${(item.genres||[]).map(escapeHtml).join(" · ")}</p></div><span>${item.rating==null?"-":`★ ${item.rating}`}</span><div class="catalog-character-status">${item.characters?.length?`<span>등장인물 ${item.characters.length}명</span>`:`<button type="button" data-module-character-update="${escapeHtml(item.id)}">UPDATE</button>`}</div><div><button type="button" data-module-edit="${escapeHtml(item.id)}">수정</button><button type="button" class="danger" data-module-delete="${escapeHtml(item.id)}">삭제</button></div></article>`).join("")||'<div class="notice">저장된 데이터가 없습니다.</div>';
+          list.querySelectorAll<HTMLButtonElement>("[data-module-edit]").forEach(button=>button.addEventListener("click",()=>{const item=currentItems.find(value=>value.id===button.dataset.moduleEdit);if(item)editItem(item);}));list.querySelectorAll<HTMLButtonElement>("[data-module-delete]").forEach(button=>button.addEventListener("click",async()=>{const item=currentItems.find(value=>value.id===button.dataset.moduleDelete);if(!item||!confirm(`‘${item.title}’ 항목을 삭제할까요?`))return;const response=await fetch("/api/admin/catalog-items",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:panel.dataset.catalogCategory,documentId,id:item.id})});const data=await response.json();if(!response.ok)return alert(data.error);await load();}));list.querySelectorAll<HTMLButtonElement>("[data-module-character-update]").forEach(button=>button.addEventListener("click",async()=>{button.disabled=true;button.textContent="UPDATING...";try{const response=await fetch("/api/admin/catalog-characters",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:panel.dataset.catalogCategory,documentId,itemId:button.dataset.moduleCharacterUpdate})});const data=await response.json();if(!response.ok)throw new Error(data.error);message.textContent=`등장인물 업데이트 완료 · 성공 ${data.updated}개 · 실패 ${data.failed}개`;await load();}catch(error){message.textContent=error instanceof Error?error.message:"등장인물 업데이트에 실패했습니다.";button.disabled=false;button.textContent="UPDATE";}}));
+          const pages=Math.max(1,Math.ceil(total/10));if(page>pages)page=pages;const start=Math.max(1,Math.min(page-7,pages-14));const end=Math.min(pages,start+14);const numbers=Array.from({length:end-start+1},(_,i)=>start+i);pager.innerHTML=`<button type="button" data-page="${Math.max(1,page-1)}" ${page===1?"disabled":""}>이전</button>${numbers.map(value=>`<button type="button" data-page="${value}" class="${value===page?"active":""}" ${value===page?'aria-current="page"':""}>${value}</button>`).join("")}<button type="button" data-page="${Math.min(pages,page+1)}" ${page===pages?"disabled":""}>다음</button>`;pager.querySelectorAll<HTMLButtonElement>("[data-page]").forEach(button=>button.addEventListener("click",()=>{const next=Number(button.dataset.page);if(next!==page){page=next;load();}}));
+        } catch(error){list.innerHTML=`<div class="notice">${escapeHtml(error instanceof Error?error.message:"목록을 불러오지 못했습니다.")}</div>`;}
+      };
+      panel.addEventListener("catalog:load",load);
+      panel.querySelector<HTMLFormElement>('[data-role="search"]')!.addEventListener("submit",event=>{event.preventDefault();query=queryInput.value.trim();page=1;load();});
+      panel.querySelector<HTMLButtonElement>('[data-action="search-reset"]')!.addEventListener("click",()=>{query="";queryInput.value="";page=1;load();});
+      panel.querySelector<HTMLButtonElement>('[data-action="character-add"]')!.addEventListener("click",()=>addCharacter());
+      panel.querySelector<HTMLButtonElement>('[data-action="reset"]')!.addEventListener("click",resetForm);
+      form.addEventListener("submit",async event=>{event.preventDefault();if(!documentId){message.textContent="먼저 수동 생성으로 목록 문서를 만들어 주세요.";return;}const id=field("id").value;const characters=Array.from(charactersBox.querySelectorAll<HTMLElement>(".catalog-character-row")).map(row=>({name:row.querySelector<HTMLInputElement>("[data-character-name]")!.value.trim(),actor:row.querySelector<HTMLInputElement>("[data-character-actor]")!.value.trim(),imageUrl:row.querySelector<HTMLInputElement>("[data-character-image]")!.value.trim()})).filter(person=>person.name||person.actor);const body={category:panel.dataset.catalogCategory,documentId,id:id||undefined,title:field("title").value,thumbnailUrl:field("thumbnailUrl").value,genres:field("genres").value,rating:field("rating").value,synopsis:field("synopsis").value,isUpdated:field<HTMLInputElement>("isUpdated").checked,characters};message.textContent="저장 중입니다.";try{const response=await fetch("/api/admin/catalog-items",{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error);resetForm();message.textContent="저장했습니다.";await load();}catch(error){message.textContent=error instanceof Error?error.message:"저장하지 못했습니다.";}});
+      panel.querySelector<HTMLButtonElement>('[data-action="characters-all"]')!.addEventListener("click",async event=>{const button=event.currentTarget as HTMLButtonElement;button.disabled=true;button.textContent="업데이트 중...";try{const response=await fetch("/api/admin/catalog-characters",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:panel.dataset.catalogCategory,documentId})});const data=await response.json();if(!response.ok)throw new Error(data.error);message.textContent=`전체 등장인물 업데이트 · 성공 ${data.updated}개 · 실패 ${data.failed}개`;await load();}catch(error){message.textContent=error instanceof Error?error.message:"업데이트에 실패했습니다.";}finally{button.disabled=false;button.textContent="전체 등장인물 업데이트";}});
+      panel.querySelector<HTMLButtonElement>('[data-action="thumbnails"]')!.addEventListener("click",async event=>{const button=event.currentTarget as HTMLButtonElement;button.disabled=true;button.textContent="저장 중...";try{const response=await fetch("/api/admin/catalog-thumbnails",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:panel.dataset.catalogCategory})});const data=await response.json();if(!response.ok)throw new Error(data.error);message.textContent=`썸네일 이미지 저장 · 성공 ${data.updated}개 · 실패 ${data.failed}개`;await load();}catch(error){message.textContent=error instanceof Error?error.message:"이미지 저장에 실패했습니다.";}finally{button.disabled=false;button.textContent="썸네일 이미지 저장";}});
+      generate.addEventListener("click", async () => {
+        const category = panel.dataset.catalogCategory || "";
+        const title = panel.dataset.catalogTitle || "콘텐츠";
+        if (!confirm(`대시보드에 저장된 ${title} 크롤링 주소로 데이터를 생성할까요?`)) return;
+        generate.disabled = true; generate.textContent = "생성 중..."; message.textContent = `${title} 목록을 수집하고 있습니다.`;
+        try {
+          const response = await fetch("/api/admin/catalog-generate", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ category }) });
+          const data = await response.json(); if (!response.ok) throw new Error(data.error || "수동 생성에 실패했습니다.");
+          message.textContent = `${data.documentId} · ${data.crawledPages || 0}페이지 · ${data.itemCount}개 생성 완료`;
+          panel.querySelector<HTMLElement>('[data-role="document"]')!.textContent = data.documentId;
+          panel.querySelector<HTMLElement>('[data-role="total"]')!.textContent = `${data.itemCount}개`;
+          page=1;query="";queryInput.value="";await load();
+        } catch (error) { message.textContent = error instanceof Error ? error.message : "수동 생성에 실패했습니다."; }
+        finally { generate.disabled = false; generate.textContent = `${title} 수동 생성`; }
+      });
+    });
+
+    const sourceFields = ["drama", "oldDrama", "entertainment", "currentAffairs", "oldEntertainment", "worldDrama", "overseasEntertainment", "generalAnime", "animatedMovie", "koreanMovie", "foreignMovie"] as const;
+    const sourceMessage = document.querySelector<HTMLElement>("#source-message")!;
+    let sourceMessageTimer = 0;
+    function showSourceMessage(value: string) {
+      window.clearTimeout(sourceMessageTimer);
+      sourceMessage.textContent = value;
+      sourceMessageTimer = window.setTimeout(() => { sourceMessage.textContent = ""; }, 3000);
+    }
+    async function loadSources() {
+      try {
+        const response = await fetch("/api/admin/crawler-settings"); const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        sourceFields.forEach((field) => { document.querySelector<HTMLInputElement>(`#source-${field}`)!.value = data.settings[field] || ""; });
+      } catch (error) { showSourceMessage(error instanceof Error ? error.message : "주소 설정을 불러오지 못했습니다."); }
+    }
+    document.querySelectorAll<HTMLButtonElement>("[data-validate-source]").forEach((button) => button.addEventListener("click", async () => {
+      const field = button.dataset.validateSource as typeof sourceFields[number];
+      const status = document.querySelector<HTMLElement>(`[data-source-status="${field}"]`)!;
+      const url = document.querySelector<HTMLInputElement>(`#source-${field}`)!.value;
+      button.disabled = true; status.textContent = "확인 중...";
+      try { const response = await fetch("/api/admin/crawler-settings", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ url }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || `HTTP ${data.status}`); status.textContent = `연결 성공 · HTTP ${data.status}`; status.className = "success"; }
+      catch (error) { status.textContent = error instanceof Error ? error.message : "연결 실패"; status.className = "error"; }
+      finally { button.disabled = false; }
+    }));
+    document.querySelector("#save-sources")!.addEventListener("click", async () => {
+      const body = Object.fromEntries(sourceFields.map((field) => [field, document.querySelector<HTMLInputElement>(`#source-${field}`)!.value]));
+      showSourceMessage("저장 중입니다.");
+      try { const response = await fetch("/api/admin/crawler-settings", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); showSourceMessage("크롤링 주소를 저장했습니다."); }
+      catch (error) { showSourceMessage(error instanceof Error ? error.message : "저장하지 못했습니다."); }
+    });
+
+    type CatalogCharacter = { name?:string; actor?:string; imageUrl?:string };
+    type CatalogItem = { id:string; title?:string; thumbnailUrl?:string; hasThumbnailImageData?:boolean; genres?:string[]; rating?:number|null; synopsis?:string; characters?:CatalogCharacter[]; isUpdated?:boolean };
+    const catalogForm = document.querySelector<HTMLFormElement>("#catalog-form")!;
+    const catalogList = document.querySelector<HTMLElement>("#catalog-admin-list")!;
+    const catalogMessage = document.querySelector<HTMLElement>("#catalog-message")!;
+    const catalogCharacters = document.querySelector<HTMLElement>("#catalog-characters")!;
+    let catalogItems: CatalogItem[] = []; let catalogDocumentId = ""; let catalogPage = 1; let catalogTotal = 0; let catalogQuery = "";
+    function addCatalogCharacter(person:CatalogCharacter={}) { const row=document.createElement("div");row.className="catalog-character-row";row.innerHTML=`<div class="catalog-character-names"><label><span>이름</span><input data-character-name value="${escapeHtml(person.name||"")}"></label><label><span>배우 이름</span><input data-character-actor value="${escapeHtml(person.actor||"")}"></label></div><label class="catalog-character-image"><span>이미지 URL</span><input data-character-image type="url" value="${escapeHtml(person.imageUrl||"")}"></label><button type="button" class="danger" data-character-remove aria-label="등장인물 삭제">삭제</button>`;row.querySelector("[data-character-remove]")!.addEventListener("click",()=>row.remove());catalogCharacters.append(row); }
+    function renderCatalogCharacters(characters:CatalogCharacter[] = []) { catalogCharacters.replaceChildren();characters.forEach((person)=>addCatalogCharacter(person)); }
+    function resetCatalogForm() { catalogForm.reset(); renderCatalogCharacters(); document.querySelector<HTMLInputElement>("#catalog-id")!.value = ""; document.querySelector("#catalog-form-title")!.textContent = "드라마 추가"; }
+    function editCatalog(item: CatalogItem) { document.querySelector<HTMLInputElement>("#catalog-id")!.value=item.id; document.querySelector<HTMLInputElement>("#catalog-title")!.value=item.title||""; document.querySelector<HTMLInputElement>("#catalog-thumbnail")!.value=item.thumbnailUrl||""; document.querySelector<HTMLInputElement>("#catalog-genres")!.value=(item.genres||[]).join(", "); document.querySelector<HTMLInputElement>("#catalog-rating")!.value=item.rating == null ? "" : String(item.rating); document.querySelector<HTMLTextAreaElement>("#catalog-synopsis")!.value=item.synopsis||""; renderCatalogCharacters(item.characters||[]); document.querySelector<HTMLInputElement>("#catalog-updated")!.checked=Boolean(item.isUpdated); document.querySelector("#catalog-form-title")!.textContent="드라마 수정"; catalogForm.scrollIntoView({behavior:"smooth",block:"start"}); }
+    function renderCatalogItems() { catalogList.innerHTML = catalogItems.map((item) => {const characterCount=item.characters?.length||0;const image=item.hasThumbnailImageData?`/api/catalog/thumbnail?category=drama&documentId=${encodeURIComponent(catalogDocumentId)}&itemId=${encodeURIComponent(item.id)}`:item.thumbnailUrl;return `<article><div class="catalog-row-thumb">${image?`<img src="${escapeHtml(image)}" alt="">`:"NO IMAGE"}</div><div><h3>${escapeHtml(item.title||"제목 없음")}</h3><p>${(item.genres||[]).map(escapeHtml).join(" · ")}</p></div><span>${item.rating == null?"-":`★ ${item.rating}`}</span><div class="catalog-character-status">${characterCount?`<span>등장인물 ${characterCount}명</span>`:`<button type="button" data-catalog-character-update="${escapeHtml(item.id)}">UPDATE</button>`}</div><div><button type="button" data-catalog-edit="${escapeHtml(item.id)}">수정</button><button type="button" class="danger" data-catalog-delete="${escapeHtml(item.id)}">삭제</button></div></article>`;}).join("") || '<div class="notice">저장된 드라마가 없습니다.</div>'; catalogList.querySelectorAll<HTMLButtonElement>("[data-catalog-edit]").forEach((button)=>button.addEventListener("click",()=>{const item=catalogItems.find((v)=>v.id===button.dataset.catalogEdit);if(item)editCatalog(item);})); catalogList.querySelectorAll<HTMLButtonElement>("[data-catalog-delete]").forEach((button)=>button.addEventListener("click",()=>removeCatalog(button.dataset.catalogDelete||"")));catalogList.querySelectorAll<HTMLButtonElement>("[data-catalog-character-update]").forEach((button)=>button.addEventListener("click",()=>updateCatalogCharacters(button))); }
+    async function updateCatalogCharacters(button:HTMLButtonElement) { const itemId=button.dataset.catalogCharacterUpdate||"";const item=catalogItems.find((value)=>value.id===itemId);if(!item)return;button.disabled=true;button.textContent="UPDATING...";catalogMessage.textContent=`${item.title||"드라마"} 등장인물을 수집하고 있습니다.`;try{const response=await fetch("/api/admin/catalog-characters",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:"drama",documentId:catalogDocumentId,itemId})});const data=await response.json();if(!response.ok)throw new Error(data.error||"등장인물 정보를 가져오지 못했습니다.");catalogMessage.textContent=`${item.title||"드라마"} 등장인물 업데이트 · 성공 ${data.updated}개 · 실패 ${data.failed}개`;await loadCatalogItems();}catch(error){catalogMessage.textContent=error instanceof Error?error.message:"등장인물 정보를 가져오지 못했습니다.";button.disabled=false;button.textContent="UPDATE";} }
+    function renderCatalogPagination() { const pager=document.querySelector<HTMLElement>("#catalog-pagination")!;const totalPages=Math.max(1,Math.ceil(catalogTotal/10));if(catalogPage>totalPages)catalogPage=totalPages;const start=Math.max(1,Math.min(catalogPage-7,totalPages-14));const end=Math.min(totalPages,start+14);const pages=Array.from({length:end-start+1},(_,index)=>start+index);pager.innerHTML=`<button type="button" data-catalog-page="${Math.max(1,catalogPage-1)}" ${catalogPage===1?"disabled":""}>이전</button>${pages.map((page)=>`<button type="button" data-catalog-page="${page}" class="${page===catalogPage?"active":""}" ${page===catalogPage?'aria-current="page"':""}>${page}</button>`).join("")}<button type="button" data-catalog-page="${Math.min(totalPages,catalogPage+1)}" ${catalogPage===totalPages?"disabled":""}>다음</button>`;pager.querySelectorAll<HTMLButtonElement>("[data-catalog-page]").forEach((button)=>button.addEventListener("click",()=>{const page=Number(button.dataset.catalogPage);if(page!==catalogPage){catalogPage=page;loadCatalogItems();}})); }
+    async function loadCatalogItems() { catalogList.innerHTML='<div class="notice">목록을 불러오는 중입니다.</div>'; try { const response=await fetch(`/api/admin/catalog-dramas?page=${catalogPage}&q=${encodeURIComponent(catalogQuery)}`); const data=await response.json(); if(!response.ok)throw new Error(data.error); catalogItems=data.items||[];catalogDocumentId=data.documentId;catalogTotal=data.total||0;document.querySelector("#catalog-document")!.textContent=catalogQuery?`SEARCH · ${catalogQuery}`:catalogDocumentId;document.querySelector("#catalog-total")!.textContent=`${catalogTotal}개`;document.querySelector<HTMLButtonElement>("#catalog-search-reset")!.hidden=!catalogQuery;renderCatalogItems();renderCatalogPagination(); } catch(error){catalogList.innerHTML=`<div class="notice">${escapeHtml(error instanceof Error?error.message:"목록을 불러오지 못했습니다.")}</div>`;} }
+    async function removeCatalog(id:string){const item=catalogItems.find((v)=>v.id===id);if(!item||!confirm(`‘${item.title}’ 드라마를 삭제할까요?`))return;const response=await fetch("/api/admin/catalog-dramas",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({documentId:catalogDocumentId,id})});const data=await response.json();if(!response.ok)return alert(data.error);await loadCatalogItems();}
+    catalogForm.addEventListener("submit",async(event)=>{event.preventDefault();const id=document.querySelector<HTMLInputElement>("#catalog-id")!.value;const characters=Array.from(catalogCharacters.querySelectorAll<HTMLElement>(".catalog-character-row")).map((row)=>({name:row.querySelector<HTMLInputElement>("[data-character-name]")!.value.trim(),actor:row.querySelector<HTMLInputElement>("[data-character-actor]")!.value.trim(),imageUrl:row.querySelector<HTMLInputElement>("[data-character-image]")!.value.trim()})).filter((person)=>person.name||person.actor);const body={documentId:catalogDocumentId,id:id||undefined,title:document.querySelector<HTMLInputElement>("#catalog-title")!.value,thumbnailUrl:document.querySelector<HTMLInputElement>("#catalog-thumbnail")!.value,genres:document.querySelector<HTMLInputElement>("#catalog-genres")!.value,rating:document.querySelector<HTMLInputElement>("#catalog-rating")!.value,synopsis:document.querySelector<HTMLTextAreaElement>("#catalog-synopsis")!.value,characters,isUpdated:document.querySelector<HTMLInputElement>("#catalog-updated")!.checked};catalogMessage.textContent="저장 중입니다.";try{const response=await fetch("/api/admin/catalog-dramas",{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error);resetCatalogForm();catalogMessage.textContent="저장했습니다.";await loadCatalogItems();}catch(error){catalogMessage.textContent=error instanceof Error?error.message:"저장하지 못했습니다.";}});
+    document.querySelector("#catalog-character-add")!.addEventListener("click",()=>addCatalogCharacter());
+    document.querySelector<HTMLButtonElement>("#catalog-characters-update-all")!.addEventListener("click",async(event)=>{const button=event.currentTarget as HTMLButtonElement;if(!confirm("등장인물이 없는 모든 드라마의 상세 페이지를 크롤링할까요? 작품 수에 따라 오래 걸릴 수 있습니다."))return;button.disabled=true;button.textContent="전체 업데이트 중...";catalogMessage.textContent="등장인물이 없는 드라마를 확인하고 상세 정보를 수집하고 있습니다.";try{const response=await fetch("/api/admin/catalog-characters",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:"drama",documentId:catalogDocumentId})});const data=await response.json();if(!response.ok)throw new Error(data.error||"전체 업데이트에 실패했습니다.");catalogMessage.textContent=`전체 등장인물 업데이트 완료 · 대상 ${data.targetCount}개 · 성공 ${data.updated}개 · 실패 ${data.failed}개`;await loadCatalogItems();}catch(error){catalogMessage.textContent=error instanceof Error?error.message:"전체 업데이트에 실패했습니다.";}finally{button.disabled=false;button.textContent="전체 등장인물 업데이트";}});
+    document.querySelector<HTMLButtonElement>("#catalog-thumbnails-store")!.addEventListener("click",async(event)=>{const button=event.currentTarget as HTMLButtonElement;if(!confirm("저장되지 않은 썸네일을 이미지 데이터로 변환해 Firestore에 저장할까요?"))return;button.disabled=true;button.textContent="이미지 저장 중...";catalogMessage.textContent="썸네일 이미지를 내려받아 데이터로 저장하고 있습니다.";try{const response=await fetch("/api/admin/catalog-thumbnails",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:"drama"})});const data=await response.json();if(!response.ok)throw new Error(data.error||"이미지 저장에 실패했습니다.");catalogMessage.textContent=`썸네일 이미지 저장 완료 · 대상 ${data.targetCount}개 · 성공 ${data.updated}개 · 실패 ${data.failed}개`;await loadCatalogItems();}catch(error){catalogMessage.textContent=error instanceof Error?error.message:"이미지 저장에 실패했습니다.";}finally{button.disabled=false;button.textContent="썸네일 이미지 저장";}});
+    document.querySelector("#catalog-reset")!.addEventListener("click",resetCatalogForm);
+    document.querySelector<HTMLFormElement>("#catalog-search-form")!.addEventListener("submit",(event)=>{event.preventDefault();catalogQuery=document.querySelector<HTMLInputElement>("#catalog-search-input")!.value.trim();catalogPage=1;loadCatalogItems();});
+    document.querySelector("#catalog-search-reset")!.addEventListener("click",()=>{catalogQuery="";catalogPage=1;document.querySelector<HTMLInputElement>("#catalog-search-input")!.value="";loadCatalogItems();});
+    document.querySelector<HTMLButtonElement>("#generate-catalog")!.addEventListener("click",async(event)=>{const button=event.currentTarget as HTMLButtonElement;if(!confirm("31페이지 전체를 크롤링해 새 드라마 문서를 생성할까요?"))return;button.disabled=true;button.textContent="생성 중...";catalogMessage.textContent="전체 드라마 목록을 수집하고 있습니다.";try{const response=await fetch("/api/admin/catalog-drama-generate",{method:"POST"});const data=await response.json();if(!response.ok)throw new Error(data.error);catalogPage=1;catalogMessage.textContent=`${data.documentId} · 드라마 ${data.itemCount}개 생성 완료`;await loadCatalogItems();}catch(error){catalogMessage.textContent=error instanceof Error?error.message:"생성하지 못했습니다.";}finally{button.disabled=false;button.textContent="드라마 수동 생성";}});
+    loadSources();
+
     type CastMember = { name?: string; roleName?: string; isLead?: boolean };
     type Character = { name?: string; actor?: string; description?: string };
-    type Drama = { id: string; broadcaster?: string; title?: string; slot?: string; airDays?: string[]; airTime?: string; thumbnailUrl?: string; directors?: string[]; cast?: CastMember[]; characters?: Character[] };
-    const country = document.querySelector<HTMLSelectElement>("#admin-country")!;
+    type Broadcast = { id: string; broadcaster?: string; title?: string; slot?: string; airDays?: string[]; airTime?: string; thumbnailUrl?: string; directors?: string[]; cast?: CastMember[]; characters?: Character[] };
+    const country = document.querySelector<HTMLSelectElement>("#admin-country");
+    const countryCode = () => country?.value || "KR";
     const weekPanel = document.querySelector<HTMLElement>("#week-panel")!;
     const scheduleEditor = document.querySelector<HTMLElement>("#schedule-editor")!;
     const weekList = document.querySelector<HTMLElement>("#week-list")!;
@@ -118,8 +295,8 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
     const yearToggle = document.querySelector<HTMLButtonElement>("#year-toggle")!;
     const yearOptions = document.querySelector<HTMLElement>("#year-options")!;
     const selectedYearChips = document.querySelector<HTMLElement>("#selected-year-chips")!;
-    const form = document.querySelector<HTMLFormElement>("#drama-form")!;
-    const idInput = document.querySelector<HTMLInputElement>("#drama-id")!;
+    const form = document.querySelector<HTMLFormElement>("#broadcast-form")!;
+    const idInput = document.querySelector<HTMLInputElement>("#broadcast-id")!;
     const broadcaster = document.querySelector<HTMLInputElement>("#broadcaster")!;
     const title = document.querySelector<HTMLInputElement>("#title")!;
     const airTime = document.querySelector<HTMLInputElement>("#air-time")!;
@@ -132,12 +309,12 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
     const extraDetails = document.querySelector<HTMLDetailsElement>(".extra-fields")!;
     const previewImage = document.querySelector<HTMLImageElement>("#preview-image")!;
     const previewMessage = document.querySelector<HTMLElement>("#preview-message")!;
-    const list = document.querySelector<HTMLElement>("#drama-list")!;
+    const list = document.querySelector<HTMLElement>("#broadcast-list")!;
     const loading = document.querySelector<HTMLElement>("#loading")!;
     const empty = document.querySelector<HTMLElement>("#empty")!;
     const message = document.querySelector<HTMLElement>("#form-message")!;
     const resetButton = document.querySelector<HTMLButtonElement>("#reset-form")!;
-    let items: Drama[] = [];
+    let items: Broadcast[] = [];
     let selectedDocId = "";
     let schedules: Array<{ docId: string; week: string; itemCount: number; createdAt?: string | null }> = [];
 
@@ -163,7 +340,7 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
       extraDetails.open = false; message.textContent = ""; updatePreview();
     }
 
-    function edit(item: Drama) {
+    function edit(item: Broadcast) {
       idInput.value = item.id; broadcaster.value = item.broadcaster || ""; title.value = item.title || "";
       airTime.value = item.airTime || ""; slot.value = item.slot || ""; airDays.value = (item.airDays || []).join(", ");
       thumbnailUrl.value = item.thumbnailUrl || ""; resetButton.hidden = false;
@@ -180,7 +357,7 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
     function render() {
       document.querySelector("#item-count")!.textContent = `${items.length}개`;
       empty.hidden = items.length !== 0;
-      list.innerHTML = items.map((item) => `<article class="drama-row">
+      list.innerHTML = items.map((item) => `<article class="broadcast-row">
         <div class="row-thumb">${item.thumbnailUrl ? `<img src="${escapeHtml(item.thumbnailUrl)}" alt="">` : "<span>NO IMAGE</span>"}</div>
         <div class="row-copy"><span>${escapeHtml(item.broadcaster || "미지정")}</span><h3>${escapeHtml(item.title || "제목 없음")}</h3><p>${escapeHtml([item.airDays?.join("·"), item.airTime, item.slot].filter(Boolean).join(" · "))}</p></div>
         <div class="row-actions"><button type="button" data-edit="${item.id}">수정</button><button type="button" class="danger" data-delete="${item.id}">삭제</button></div>
@@ -209,7 +386,7 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
         (result[year] ||= []).push(schedule);
         return result;
       }, {});
-      weekList.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map((year) => `<section class="year-group"><h3><span>${escapeHtml(year)}</span>년</h3><div>${groups[year].map((schedule) => `<button type="button" class="week-card" data-doc-id="${escapeHtml(schedule.docId)}"><span>${escapeHtml(country.value)}</span><strong>${escapeHtml(schedule.week)}</strong><small>${schedule.itemCount}개 편성${schedule.createdAt ? ` · ${new Date(schedule.createdAt).toLocaleDateString("ko-KR")}` : ""}</small><i>관리하기 →</i></button>`).join("")}</div></section>`).join("");
+      weekList.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map((year) => `<section class="year-group"><h3><span>${escapeHtml(year)}</span>년</h3><div>${groups[year].map((schedule) => `<button type="button" class="week-card" data-doc-id="${escapeHtml(schedule.docId)}"><span>${escapeHtml(countryCode())}</span><strong>${escapeHtml(schedule.week)}</strong><small>${schedule.itemCount}개 편성${schedule.createdAt ? ` · ${new Date(schedule.createdAt).toLocaleDateString("ko-KR")}` : ""}</small><i>관리하기 →</i></button>`).join("")}</div></section>`).join("");
       weekList.querySelectorAll<HTMLButtonElement>("[data-doc-id]").forEach((button) => button.addEventListener("click", () => loadSchedule(button.dataset.docId || "")));
     }
 
@@ -217,7 +394,7 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
       selectedDocId = ""; weekPanel.hidden = false; scheduleEditor.hidden = true;
       weekLoading.hidden = false; weekEmpty.hidden = true; weekList.innerHTML = "";
       try {
-        const response = await fetch(`/api/admin/dramas?country=${country.value}`);
+        const response = await fetch(`/api/admin/broadcasts?country=${countryCode()}`);
         const data = await response.json(); if (!response.ok) throw new Error(data.error);
         schedules = data.schedules || [];
         const currentYear = String(new Date().getFullYear());
@@ -233,7 +410,7 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
       weekPanel.hidden = true; scheduleEditor.hidden = false;
       loading.hidden = false; empty.hidden = true; list.innerHTML = "";
       try {
-        const response = await fetch(`/api/admin/dramas?country=${country.value}&docId=${encodeURIComponent(selectedDocId)}`);
+        const response = await fetch(`/api/admin/broadcasts?country=${countryCode()}&docId=${encodeURIComponent(selectedDocId)}`);
         const data = await response.json(); if (!response.ok) throw new Error(data.error);
         items = data.items || []; document.querySelector("#week-label")!.textContent = `${data.countryCode} · ${data.week}`; render();
       } catch (error) {
@@ -247,7 +424,7 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
     async function remove(id: string) {
       const item = items.find((value) => value.id === id);
       if (!item || !confirm(`‘${item.title}’ 편성을 삭제할까요?`)) return;
-      const response = await fetch("/api/admin/dramas", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ countryCode: country.value, docId: selectedDocId, id }) });
+      const response = await fetch("/api/admin/broadcasts", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ countryCode: countryCode(), docId: selectedDocId, id }) });
       const data = await response.json(); if (!response.ok) return alert(data.error || "삭제하지 못했습니다.");
       if (idInput.value === id) resetForm(); await loadSchedule();
     }
@@ -255,14 +432,14 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
     form.addEventListener("submit", async (event) => {
       event.preventDefault(); const button = document.querySelector<HTMLButtonElement>("#save-button")!; button.disabled = true; message.textContent = "저장 중입니다.";
       const body = {
-        countryCode: country.value, docId: selectedDocId, id: idInput.value || undefined, broadcaster: broadcaster.value, title: title.value,
+        countryCode: countryCode(), docId: selectedDocId, id: idInput.value || undefined, broadcaster: broadcaster.value, title: title.value,
         airTime: airTime.value, slot: slot.value, airDays: airDays.value.split(",").map((value) => value.trim()).filter(Boolean), thumbnailUrl: thumbnailUrl.value,
         directors: directors.value.split(",").map((value) => value.trim()).filter(Boolean),
         cast: cast.value.split("\n").map((line) => { const [name = "", roleName = "", lead = ""] = line.split("|").map((value) => value.trim()); return { name, roleName, isLead: /^(주연|yes|true|y|1)$/i.test(lead) }; }).filter((person) => person.name),
         characters: characters.value.split("\n").map((line) => { const [name = "", actor = "", ...description] = line.split("|").map((value) => value.trim()); return { name, actor, description: description.join(" | ") }; }).filter((person) => person.name || person.actor),
       };
       try {
-        const response = await fetch("/api/admin/dramas", { method: idInput.value ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const response = await fetch("/api/admin/broadcasts", { method: idInput.value ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         const data = await response.json(); if (!response.ok) throw new Error(data.error);
         resetForm(); message.textContent = "저장되었습니다."; await loadSchedule();
       } catch (error) { message.textContent = error instanceof Error ? error.message : "저장하지 못했습니다."; }
@@ -288,14 +465,14 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
       }
     });
     document.querySelector("#back-to-weeks")!.addEventListener("click", () => { resetForm(); loadWeeks(); });
-    country.addEventListener("change", () => { resetForm(); loadWeeks(); });
+    country?.addEventListener("change", () => { resetForm(); loadWeeks(); });
     loadWeeks();
   </script>
 </Layout>
 
 <style is:global>
   main { min-height:100vh; background:radial-gradient(circle at 85% 0,rgba(116,35,28,.18),transparent 28%),#080a0d; }
-  .admin-head,.admin-grid,.week-panel { max-width:1332px; margin:auto; }
+  .admin-head,.admin-grid,.week-panel,.admin-tabs,.tab-panel { max-width:1332px; margin-left:auto; margin-right:auto; }
   .admin-head { padding:72px 0 42px; display:flex; justify-content:space-between; align-items:end; border-bottom:1px solid #ffffff18; }
   .admin-head span,.section-title span { color:#c44a40; font-size:10px; letter-spacing:.18em; font-weight:700; }
   .admin-head h1 { margin:10px 0; font-size:44px; letter-spacing:-.04em; }
@@ -333,11 +510,14 @@ if (!isAdminRequest(Astro.request)) return Astro.redirect("/");
   .form-actions { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-top:18px; }.form-actions span{font-size:11px;color:#b8a78f}
   button { cursor:pointer }.primary { padding:12px 18px; border:1px solid #bd3e35; background:#bd3e35; color:white; font-weight:700; }.primary:disabled{opacity:.6}
   .text-button { border:0; background:none; color:#aaa49d; font-size:11px; text-decoration:underline; }
-  .drama-list { display:grid; gap:10px; }.drama-row { display:grid; grid-template-columns:72px 1fr auto; gap:15px; align-items:center; padding:10px; border:1px solid #ffffff0e; background:#0b0d10; }
+  .broadcast-list { display:grid; gap:10px; }.broadcast-row { display:grid; grid-template-columns:72px 1fr auto; gap:15px; align-items:center; padding:10px; border:1px solid #ffffff0e; background:#0b0d10; }
   .row-thumb { width:72px; aspect-ratio:3/4; display:grid; place-items:center; overflow:hidden; background:#17191d; color:#55514c; font-size:8px; }.row-thumb img{width:100%;height:100%;object-fit:cover}
   .row-copy{min-width:0}.row-copy span{color:#c4aa84;font-size:10px}.row-copy h3{margin:5px 0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row-copy p{margin:0;color:#69655f;font-size:10px}
   .row-actions{display:flex;gap:6px}.row-actions button{padding:8px 10px;border:1px solid #ffffff1b;background:#ffffff08;color:#aaa49d;font-size:10px}.row-actions .danger{color:#e06a60;border-color:#8d302a}
   .notice{padding:65px 20px;text-align:center;color:#716d67;font-size:12px}
-  @media(max-width:900px){.admin-head{padding:95px 24px 30px}.admin-grid{grid-template-columns:1fr;padding:24px}.week-panel{margin:24px}.year-group>div{grid-template-columns:repeat(2,minmax(0,1fr))}.editor{position:static}.admin-head h1{font-size:36px}}
-  @media(max-width:600px){.admin-head{display:block}.admin-head label{display:block;margin-top:25px}.admin-head select{width:100%}.admin-grid{padding:16px}.week-panel{margin:16px;padding:18px}.week-panel>.section-title{display:block}.week-tools{justify-content:space-between;margin-top:18px}.year-field{grid-template-columns:1fr}.year-field>small{display:none}.year-multiselect>button,.year-options{width:min(260px,calc(100vw - 68px))}.year-group>div{grid-template-columns:1fr}.editor,.list-panel{padding:18px}.fields.two,.fields.three{grid-template-columns:1fr}.drama-row{grid-template-columns:58px 1fr}.row-thumb{width:58px}.row-actions{grid-column:2;justify-content:flex-end}.section-title{align-items:flex-start}}
+  .catalog-list-tools{display:flex;align-items:center;gap:10px}.catalog-list-tools button{padding:9px 12px;border:1px solid #9b7139;background:#21180d;color:#d7aa6a;font-size:10px;font-weight:700}.catalog-list-tools button:disabled{cursor:wait;opacity:.55}
+  .catalog-characters-field{margin-top:16px}.catalog-characters-head{display:flex;align-items:center;justify-content:space-between;color:#8d8881;font-size:11px}.catalog-characters-head button{padding:6px 12px;border:1px solid #ffffff20;background:#1a1d22;color:#d8d2ca;font-size:10px}.catalog-characters-field>#catalog-characters{display:grid;gap:9px;margin-top:8px}.catalog-character-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px;border:1px solid #ffffff12;background:#0b0d10}.catalog-character-names{display:grid;grid-column:1/-1;grid-template-columns:1fr 1fr;gap:10px}.catalog-editor .catalog-character-row label{display:flex;align-items:center;gap:7px;margin:0}.catalog-editor .catalog-character-row label span{flex:none}.catalog-editor .catalog-character-row input{min-width:0;margin:0;padding:9px}.catalog-character-image{grid-column:1}.catalog-character-image span{width:52px}.catalog-character-row>[data-character-remove]{grid-column:2;align-self:stretch;padding:6px 12px;border:1px solid #8d302a;background:#24100f;color:#e06a60;font-size:9px}
+  .tab-panel[hidden]{display:none!important}.admin-tabs{display:flex;gap:4px;padding-top:24px;border-bottom:1px solid #ffffff18}.admin-tabs button{padding:14px 22px;border:0;border-bottom:2px solid transparent;background:none;color:#716d67;font-size:12px;font-weight:700}.admin-tabs button.active{border-color:#c44a40;color:#fff}.dashboard-panel,.placeholder-panel{margin-top:28px;margin-bottom:90px;padding:30px;border:1px solid #ffffff12;background:#101216}.source-actions{position:relative;width:220px;flex:none;align-self:flex-start;text-align:right}.source-actions .primary{min-width:92px}.source-actions .dashboard-message{position:absolute;top:100%;right:0;width:220px;margin:7px 0 0;text-align:right}.source-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.source-grid>label{color:#928c84;font-size:11px}.source-grid>label>div{display:flex;margin-top:8px}.source-grid input{min-width:0;flex:1;padding:13px;border:1px solid #ffffff18;background:#090b0e;color:#fff;outline:none}.source-grid button{padding:0 16px;border:1px solid #ffffff20;background:#1a1d22;color:#d8d2ca}.source-grid small{display:block;min-height:16px;margin-top:6px;color:#68635d}.source-grid small.success{color:#65b883}.source-grid small.error{color:#df6c62}.dashboard-message{min-height:18px;margin:16px 0 0;color:#c4aa84;font-size:11px}.catalog-admin{padding:30px 0 90px}.catalog-admin-head{display:flex;align-items:end;justify-content:space-between;padding:28px;margin-bottom:20px;border:1px solid #ffffff12;background:#101216}.catalog-admin-head span,.placeholder-panel>span{color:#c44a40;font-size:10px;font-weight:700;letter-spacing:.18em}.catalog-admin-head h2,.placeholder-panel h2{margin:7px 0;font-size:26px}.catalog-admin-head p,.placeholder-panel p{margin:0;color:#77736e;font-size:11px}.catalog-admin-grid{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}.catalog-editor,.catalog-list-panel{max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain;padding:24px;border:1px solid #ffffff12;background:#101216;scrollbar-gutter:stable}.catalog-editor,.catalog-list-panel{position:sticky;top:20px}.catalog-editor h3{margin:0 0 20px}.catalog-editor label{display:block;margin-top:14px;color:#8d8881;font-size:11px}.catalog-editor input,.catalog-editor textarea{width:100%;margin-top:7px;padding:11px;border:1px solid #ffffff18;background:#090b0e;color:#fff;outline:none}.catalog-editor textarea{resize:vertical}.catalog-editor .check-field{display:flex;align-items:center;gap:8px}.catalog-editor .check-field input{width:auto;margin:0}.catalog-search{display:flex;gap:7px;margin:-8px 0 18px}.catalog-search label{min-width:0;flex:1}.catalog-search input{width:100%;height:38px;padding:0 11px;border:1px solid #ffffff18;background:#090b0e;color:#fff;outline:none}.catalog-search button{padding:0 14px;border:1px solid #ffffff20;background:#1a1d22;color:#d8d2ca;font-size:10px}.catalog-admin-list{display:grid;gap:8px}.catalog-admin-list article{display:grid;grid-template-columns:52px minmax(0,1fr) 60px 92px auto;gap:12px;align-items:center;padding:8px;border:1px solid #ffffff0e;background:#0b0d10}.catalog-row-thumb{width:52px;aspect-ratio:2/3;display:grid;place-items:center;overflow:hidden;background:#17191d;color:#555;font-size:7px}.catalog-row-thumb img{width:100%;height:100%;object-fit:cover}.catalog-admin-list h3{overflow:hidden;margin:0;font-size:13px;text-overflow:ellipsis;white-space:nowrap}.catalog-admin-list p{overflow:hidden;margin:5px 0 0;color:#69655f;font-size:9px;text-overflow:ellipsis;white-space:nowrap}.catalog-admin-list article>span{color:#c4aa84;font-size:10px}.catalog-character-status{display:flex;align-items:center;justify-content:center}.catalog-character-status span{color:#65b883;font-size:9px;white-space:nowrap}.catalog-character-status button{border-color:#9b7139;color:#d7aa6a}.catalog-admin-list article>div:last-child{display:flex;gap:5px}.catalog-admin-list button,.admin-pager button{padding:7px 9px;border:1px solid #ffffff1b;background:#ffffff08;color:#aaa49d;font-size:9px}.catalog-admin-list .danger{color:#e06a60;border-color:#8d302a}.admin-pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:5px;margin-top:20px;color:#8d8881;font-size:11px}.admin-pager button.active{border-color:#c44a40;background:#c44a40;color:#fff}.admin-pager button:disabled{cursor:default;opacity:.35}
+  @media(max-width:900px){.admin-head{padding:95px 24px 30px}.admin-tabs,.tab-panel{margin-left:24px;margin-right:24px}.admin-grid{grid-template-columns:1fr;padding:24px}.week-panel{margin:24px}.year-group>div{grid-template-columns:repeat(2,minmax(0,1fr))}.editor{position:static}.admin-head h1{font-size:36px}.catalog-admin-grid{grid-template-columns:1fr}.catalog-editor,.catalog-list-panel{position:static;max-height:none;overflow:visible}.source-grid{grid-template-columns:1fr}}
+  @media(max-width:600px){.admin-head{display:block}.admin-head label{display:block;margin-top:25px}.admin-head select{width:100%}.admin-tabs{margin:0 16px;overflow-x:auto}.admin-tabs button{padding:13px 14px;white-space:nowrap}.tab-panel{margin-left:16px;margin-right:16px}.dashboard-panel{padding:18px}.catalog-admin{padding-top:18px}.catalog-admin-head{display:block;padding:20px}.catalog-admin-head button{margin-top:18px}.admin-grid{padding:16px}.week-panel{margin:16px;padding:18px}.week-panel>.section-title{display:block}.week-tools{justify-content:space-between;margin-top:18px}.year-field{grid-template-columns:1fr}.year-field>small{display:none}.year-multiselect>button,.year-options{width:min(260px,calc(100vw - 68px))}.year-group>div{grid-template-columns:1fr}.editor,.list-panel{padding:18px}.fields.two,.fields.three{grid-template-columns:1fr}.broadcast-row{grid-template-columns:58px 1fr}.row-thumb{width:58px}.row-actions{grid-column:2;justify-content:flex-end}.section-title{align-items:flex-start}.catalog-admin-list article{grid-template-columns:46px 1fr auto}.catalog-admin-list article>span{display:none}.catalog-character-status{grid-column:2;justify-content:flex-start}.catalog-admin-list article>div:last-child{grid-column:2/-1;justify-content:flex-end}}
 </style>

@@ -1,0 +1,22 @@
+---
+interface Props { category: string; title: string; }
+const { category, title } = Astro.props;
+---
+<section class="tab-panel catalog-admin catalog-module" id={`panel-${category}`} data-catalog-category={category} data-catalog-title={title} hidden>
+  <div class="catalog-admin-head"><div><span>CONTENT CATALOG</span><h2>{title} 데이터 관리</h2><p>최신 생성 문서의 콘텐츠를 추가, 수정하거나 삭제합니다.</p></div><button type="button" class="primary" data-action="generate">{title} 수동 생성</button></div>
+  <div class="catalog-admin-grid">
+    <form class="catalog-editor" data-role="form">
+      <input type="hidden" data-field="id"><h3 data-role="form-title">{title} 추가</h3>
+      <label>제목<input data-field="title" required></label><label>썸네일 URL<input data-field="thumbnailUrl" type="url"></label>
+      <div class="fields two"><label>장르<input data-field="genres" placeholder="드라마, 코미디"></label><label>평점<input data-field="rating" type="number" min="0" max="10" step="0.1"></label></div>
+      <label>줄거리<textarea data-field="synopsis" rows="5"></textarea></label>
+      <section class="catalog-characters-field"><div class="catalog-characters-head"><span>등장인물</span><button type="button" data-action="character-add">추가</button></div><div data-role="characters"></div></section>
+      <label class="check-field"><input data-field="isUpdated" type="checkbox"> 업데이트 작품</label>
+      <div class="form-actions"><button type="button" class="text-button" data-action="reset">초기화</button><button type="submit" class="primary">저장</button></div>
+    </form>
+    <section class="catalog-list-panel"><div class="section-title"><div><span data-role="document">LATEST DOCUMENT</span><h2>{title} 목록</h2></div><div class="catalog-list-tools"><strong data-role="total">0개</strong><button type="button" data-action="thumbnails">썸네일 이미지 저장</button><button type="button" data-action="characters-all">전체 등장인물 업데이트</button></div></div>
+      <form class="catalog-search" data-role="search"><label><span class="sr-only">제목 검색</span><input data-field="query" placeholder={`${title} 제목 입력`}></label><button type="submit">검색</button><button type="button" data-action="search-reset" hidden>전체목록</button></form>
+      <div class="catalog-admin-list" data-role="list"><div class="notice">저장된 데이터가 없습니다.</div></div><div class="admin-pager" data-role="pagination"></div>
+    </section>
+  </div><p class="dashboard-message" data-role="message" role="status"></p>
+</section>

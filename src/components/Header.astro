@@ -1,9 +1,16 @@
 ---
+import { getCatalogCategory } from "../config/catalogCategories";
+
 interface Props {
-  activePage?: "home" | "schedule" | "admin";
+  activePage?: "home" | "schedule" | "broadcasts" | "admin";
 }
 
 const { activePage = "home" } = Astro.props;
+const selectedCatalogCategory =
+  activePage === "broadcasts"
+    ? getCatalogCategory(Astro.url.searchParams.get("category") || "drama")
+    : null;
+const catalogMenuLabel = selectedCatalogCategory?.title || "드라마";
 ---
 
 <header class="site-header">
@@ -11,6 +18,7 @@ const { activePage = "home" } = Astro.props;
     <span class="live-dot"></span>ON AIR
   </a>
   <nav class="main-nav" aria-label="주요 메뉴">
+    <!-- 제거 
     <a
       class:list={{ active: activePage === "home" }}
       href="/"
@@ -25,6 +33,13 @@ const { activePage = "home" } = Astro.props;
     >
       전체 편성
     </a>
+    -->
+    <div class="catalog-nav">
+      <button type="button" class:list={{ active: activePage === "broadcasts" }} id="catalog-nav-toggle" aria-expanded="false">{catalogMenuLabel}</button>
+      <div class="catalog-nav-menu" id="catalog-nav-menu" hidden>
+        <a href="/broadcasts?category=korean-movie">한국영화</a><a href="/broadcasts?category=foreign-movie">해외영화</a><a href="/broadcasts?category=drama">드라마</a><a href="/broadcasts?category=foreign-drama">해외드라마</a><a href="/broadcasts?category=entertainment">예능</a><a href="/broadcasts?category=anime">일반애니</a><a href="/broadcasts?category=anime-movie">극장판 애니</a><a href="/broadcasts?category=old-drama">추억의 드라마</a><a href="/broadcasts?category=documentary">시사/다큐</a><a href="/broadcasts?category=old-entertainment">추억의 예능</a><a href="/broadcasts?category=foreign-entertainment">해외(예능/다큐)</a>
+      </div>
+    </div>
     <a class:list={{ active: activePage === "admin" }} href="/admin" data-admin-only hidden>
       관리자
     </a>
@@ -73,6 +88,8 @@ const { activePage = "home" } = Astro.props;
   import { authStore, loadAuth } from "../stores/authStore";
 
   const authArea = document.querySelector<HTMLElement>("#header-auth");
+  const catalogToggle = document.querySelector<HTMLButtonElement>("#catalog-nav-toggle");
+  const catalogMenu = document.querySelector<HTMLElement>("#catalog-nav-menu");
   const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char] || char);
 
   function renderAuth() {
@@ -106,6 +123,8 @@ const { activePage = "home" } = Astro.props;
       button.addEventListener("click", () => { dropdown.hidden = !dropdown.hidden; button.setAttribute("aria-expanded", String(!dropdown.hidden)); });
   }
   document.addEventListener("click", (event) => {
+    if (catalogToggle?.contains(event.target as Node)) { catalogMenu!.hidden=!catalogMenu!.hidden;catalogToggle.setAttribute("aria-expanded",String(!catalogMenu!.hidden));return; }
+    if (!catalogMenu?.contains(event.target as Node)) { if(catalogMenu)catalogMenu.hidden=true;catalogToggle?.setAttribute("aria-expanded","false"); }
     if (!authArea?.contains(event.target as Node)) {
       const dropdown = authArea?.querySelector<HTMLElement>(".user-dropdown");
       const button = authArea?.querySelector<HTMLElement>(".user-button");
@@ -161,6 +180,7 @@ const { activePage = "home" } = Astro.props;
     padding: 10px 0;
     border-bottom: 1px solid transparent;
   }
+  .catalog-nav{position:relative;display:flex;align-items:center}.catalog-nav>button{padding:10px 0;border:0;border-bottom:1px solid transparent;background:none;color:#77736e;font-size:11px;font-weight:700;letter-spacing:.1em;cursor:pointer}.catalog-nav>button:hover,.catalog-nav>button.active,.catalog-nav>button[aria-expanded="true"]{border-color:#e04b40;color:#f7f4ee}.catalog-nav-menu{position:absolute;z-index:40;top:calc(100% + 12px);left:50%;display:grid;width:210px;padding:8px;transform:translateX(-50%);border:1px solid #ffffff1f;border-radius:8px;background:#121418;box-shadow:0 18px 45px #000c}.catalog-nav-menu[hidden]{display:none}.main-nav .catalog-nav-menu a{padding:10px 12px;border:0;border-radius:5px;color:#aaa49c;font-size:11px;letter-spacing:0}.main-nav .catalog-nav-menu a:hover{border:0;background:#ffffff0b;color:#fff}
   .main-nav a:hover,
   .main-nav a.active {
     color: #f7f4ee;

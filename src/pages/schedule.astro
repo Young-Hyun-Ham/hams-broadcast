@@ -358,6 +358,21 @@ import Header from "../components/Header.astro";
       el.innerHTML = value;
       return el.textContent?.trim() || "";
     };
+    function classifyThumbnail(image: HTMLImageElement) {
+      const thumbnail = image.closest<HTMLElement>(".thumb");
+      if (!thumbnail || !image.naturalWidth || !image.naturalHeight) return;
+      const ratio = image.naturalWidth / image.naturalHeight;
+      thumbnail.classList.remove("is-portrait", "is-landscape", "is-square");
+      thumbnail.classList.add(ratio > 1.1 ? "is-landscape" : ratio < 0.9 ? "is-portrait" : "is-square");
+    }
+    function prepareThumbnails() {
+      container.querySelectorAll(".thumb-image").forEach((image: any) => {
+        const update = () => classifyThumbnail(image);
+        image.addEventListener("load", update, { once: true });
+        image.addEventListener("error", () => image.closest(".thumb")?.classList.add("is-error"), { once: true });
+        if (image.complete) update();
+      });
+    }
     function render(filter = "all") {
       const entries = Object.entries(groups).filter(
         ([network]) => filter === "all" || network === filter,
@@ -367,8 +382,9 @@ import Header from "../components/Header.astro";
       );
       empty.hidden = detailItems.length > 0;
       container.innerHTML = detailItems.length
-        ? `<div class="programs">${detailItems.map((show, index) => `<button class="program-card" data-detail="${index}"><div class="thumb">${show.image ? `<img src="${safe(show.image)}" alt="" loading="lazy">` : `<span>ON AIR</span>`}<i>${safe(show.time || "--:--")}</i></div><strong class="program-network">${safe(show.network)}</strong><h4>${safe(show.name)}</h4></button>`).join("")}</div>`
+        ? `<div class="programs">${detailItems.map((show, index) => `<button class="program-card" data-detail="${index}"><div class="thumb">${show.image ? `<img class="thumb-backdrop" src="${safe(show.image)}" alt="" aria-hidden="true"><img class="thumb-image" src="${safe(show.image)}" alt="${safe(show.name)}" loading="lazy">` : ""}<span class="thumb-fallback">ON AIR</span><i>${safe(show.time || "--:--")}</i></div><strong class="program-network">${safe(show.network)}</strong><h4>${safe(show.name)}</h4></button>`).join("")}</div>`
         : "";
+      prepareThumbnails();
       document.querySelectorAll("[data-detail]").forEach((button: any) =>
         button.addEventListener("click", () => openDetail(detailItems[Number(button.dataset.detail)])),
       );
@@ -851,9 +867,41 @@ import Header from "../components/Header.astro";
     letter-spacing: 0.12em;
   }
   .thumb img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
+  }
+  .thumb .thumb-backdrop {
+    object-fit: cover;
+    transform: scale(1.12);
+    filter: blur(18px) brightness(0.48) saturate(0.8);
+    opacity: 0;
+  }
+  .thumb .thumb-image {
+    z-index: 1;
+    object-fit: cover;
+    transition: transform 0.25s ease;
+  }
+  .thumb.is-landscape .thumb-backdrop,
+  .thumb.is-square .thumb-backdrop {
+    opacity: 1;
+  }
+  .thumb.is-landscape .thumb-image,
+  .thumb.is-square .thumb-image {
     object-fit: contain;
+    padding: 10px;
+  }
+  .thumb-fallback {
+    display: none;
+  }
+  .thumb.is-error .thumb-backdrop,
+  .thumb.is-error .thumb-image {
+    display: none;
+  }
+  .thumb.is-error .thumb-fallback,
+  .thumb:not(:has(.thumb-image)) .thumb-fallback {
+    display: block;
   }
   .thumb i {
     position: absolute;
@@ -864,6 +912,7 @@ import Header from "../components/Header.astro";
     color: #fff;
     font-size: 9px;
     font-style: normal;
+    z-index: 2;
   }
   .programs h4 {
     font-size: 16px;
