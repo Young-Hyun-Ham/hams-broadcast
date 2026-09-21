@@ -3,10 +3,17 @@ import { getCatalogCategory } from "../../../config/catalogCategories";
 import { db } from "../../../lib/firebaseAdmin";
 
 export const prerender = false;
+const PAGE_SIZE = 24;
+
+function normalizeSearch(value: unknown) {
+  return String(value || "").normalize("NFKC").trim().toLocaleLowerCase("ko-KR");
+}
+
 export const GET: APIRoute = async ({ url }) => {
   const categoryKey = String(url.searchParams.get("category") || "drama");
   const category = getCatalogCategory(categoryKey);
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+  const query = normalizeSearch(url.searchParams.get("q"));
   if (!category)
     return Response.json(
       { error: "지원하지 않는 카테고리입니다.", items: [] },
@@ -36,16 +43,27 @@ export const GET: APIRoute = async ({ url }) => {
       });
     const parent = db.collection(category.collection).doc(documentId);
     const parentSnapshot = await parent.get();
-    const total = Number(
-      parentSnapshot.data()?.itemCount || current.data()?.itemCount || 0,
-    );
-    const snapshot = await parent
-      .collection("items")
-      .orderBy("globalOrder")
-      .offset((page - 1) * 24)
-      .limit(24)
-      .get();
-    const items = snapshot.docs.map((document) => {
+    const collection = parent.collection("items");
+    let total = Number(parentSnapshot.data()?.itemCount || current.data()?.itemCount || 0);
+    let documents: FirebaseFirestore.QueryDocumentSnapshot[];
+    if (query) {
+      const snapshot = await collection.orderBy("globalOrder").get();
+      const matches = snapshot.docs.filter((document) => {
+        const item = document.data();
+        const genres = Array.isArray(item.genres) ? item.genres.join(" ") : "";
+        return normalizeSearch(`${item.title || ""} ${genres}`).includes(query);
+      });
+      total = matches.length;
+      documents = matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    } else {
+      const snapshot = await collection
+        .orderBy("globalOrder")
+        .offset((page - 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE)
+        .get();
+      documents = snapshot.docs;
+    }
+    const items = documents.map((document) => {
       const { thumbnailImageData, ...item } = document.data();
       return {
         ...item,
@@ -60,7 +78,8 @@ export const GET: APIRoute = async ({ url }) => {
         title: category.title,
         documentId,
         page,
-        totalPages: Math.max(1, Math.ceil(total / 24)),
+        query,
+        totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
         total,
         items,
       },

@@ -44,14 +44,14 @@ import Header from "../components/Header.astro";
     const detailContent = document.querySelector<HTMLElement>("#detail-content")!;
     let items: Broadcast[] = [];
     let currentPage = 1;
+    let currentQuery = new URLSearchParams(location.search).get("q")?.trim() || "";
+    let searchTimer = 0;
+    search.value = currentQuery;
     const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char] || char);
     const thumbnailSrc = (item: Broadcast) => item.hasThumbnailImageData ? `/api/catalog/thumbnail?category=${encodeURIComponent(category)}&documentId=${encodeURIComponent(item.catalogDocumentId)}&itemId=${encodeURIComponent(item.itemDocumentId)}` : item.thumbnailUrl;
 
     function renderItems() {
-      const keyword = search.value.trim().toLocaleLowerCase();
-      const filtered = items.filter((item) => !keyword || `${item.title} ${item.genres.join(" ")}`.toLocaleLowerCase().includes(keyword));
-      count.textContent = `${filtered.length}개 작품`;
-      grid.innerHTML = filtered.length ? filtered.map((item) => {const image=thumbnailSrc(item);return `<article class="catalog-card"><button type="button" class="card-open" data-document-id="${escapeHtml(item.catalogDocumentId)}" data-item-id="${escapeHtml(item.itemDocumentId)}" data-title="${escapeHtml(item.title)}" data-poster="${escapeHtml(image)}"><div class="catalog-poster"><img src="${escapeHtml(image)}" alt="${escapeHtml(item.title)} 포스터" loading="lazy">${item.isUpdated ? '<span class="update-badge">UPDATE</span>' : ""}${item.rating !== null ? `<span class="rating">★ ${item.rating.toFixed(1)}</span>` : ""}</div><div class="catalog-copy"><h2>${escapeHtml(item.title)}</h2><p>${item.genres.map(escapeHtml).join(" · ") || "장르 정보 없음"}</p></div></button></article>`;}).join("") : '<p class="empty-result">검색 결과가 없습니다.</p>';
+      grid.innerHTML = items.length ? items.map((item) => {const image=thumbnailSrc(item);return `<article class="catalog-card"><button type="button" class="card-open" data-document-id="${escapeHtml(item.catalogDocumentId)}" data-item-id="${escapeHtml(item.itemDocumentId)}" data-title="${escapeHtml(item.title)}" data-poster="${escapeHtml(image)}"><div class="catalog-poster"><img src="${escapeHtml(image)}" alt="${escapeHtml(item.title)} 포스터" loading="lazy">${item.isUpdated ? '<span class="update-badge">UPDATE</span>' : ""}${item.rating !== null ? `<span class="rating">★ ${item.rating.toFixed(1)}</span>` : ""}</div><div class="catalog-copy"><h2>${escapeHtml(item.title)}</h2><p>${item.genres.map(escapeHtml).join(" · ") || "장르 정보 없음"}</p></div></button></article>`;}).join("") : '<p class="empty-result">검색 결과가 없습니다.</p>';
       grid.querySelectorAll<HTMLButtonElement>(".card-open").forEach((button) => button.addEventListener("click", () => openDetail(button)));
     }
     async function openDetail(button: HTMLButtonElement) {
@@ -83,16 +83,22 @@ import Header from "../components/Header.astro";
       refresh?.classList.add("loading");
       grid.innerHTML = Array.from({ length: 12 }, () => '<div class="skeleton"></div>').join("");
       try {
-        const response = await fetch(`/api/catalog/items?category=${encodeURIComponent(category)}&page=${page}`);
+        const response = await fetch(`/api/catalog/items?category=${encodeURIComponent(category)}&page=${page}&q=${encodeURIComponent(currentQuery)}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "목록 요청에 실패했습니다.");
-        items = data.items; renderItems(); renderPagination(data.totalPages); history.replaceState(null, "", `/broadcasts?category=${encodeURIComponent(category)}${page===1?"":`&page=${page}`}`);
+        items = data.items; count.textContent = currentQuery ? `검색 결과 ${data.total}개` : `${data.total}개 작품`; renderItems(); renderPagination(data.totalPages); history.replaceState(null, "", `/broadcasts?category=${encodeURIComponent(category)}${currentQuery?`&q=${encodeURIComponent(currentQuery)}`:""}${page===1?"":`&page=${page}`}`);
       } catch (error) {
         grid.hidden = true; errorBox.hidden = false;
         errorBox.querySelector("p")!.textContent = error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요.";
       } finally { grid.setAttribute("aria-busy", "false"); refresh?.classList.remove("loading"); }
     }
-    search.addEventListener("input", renderItems);
+    search.addEventListener("input", () => {
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => {
+        currentQuery = search.value.trim();
+        load(1);
+      }, 300);
+    });
     errorBox.querySelector("button")!.addEventListener("click", () => load());
     refresh?.addEventListener("click", () => load());
     detail.querySelector<HTMLButtonElement>(".detail-close")!.addEventListener("click", () => detail.close());
