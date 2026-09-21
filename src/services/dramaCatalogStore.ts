@@ -31,7 +31,7 @@ export function itemDocumentId(item: CatalogBroadcast) {
 }
 
 export async function createHistory(type: "catalog" | "detail" | "migration" | "thumbnail", fields: Record<string, unknown> = {}) {
-  const ref = db.collection("dramaHistory").doc();
+  const ref = db.collection("catalogHistory").doc();
   await ref.set({ type, status: "processing", requestedAt: Timestamp.now(), ...fields });
   return ref;
 }
