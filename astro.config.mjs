@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
 import cron from 'node-cron';
+import vercel from "@astrojs/vercel";
 
 function dramaCronIntegration() {
   return {
@@ -21,6 +22,7 @@ function dramaCronIntegration() {
 
 export default defineConfig({
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
-  integrations: [dramaCronIntegration()]
+  // adapter: node({ mode: 'standalone' }),
+  // integrations: [dramaCronIntegration()]
+  adapter: vercel(),
 });
