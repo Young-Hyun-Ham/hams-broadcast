@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@astrojs/node": "^11.1.6",
+    "@astrojs/vercel": "^11.0.10",
     "@google/genai": "^2.23.0",
     "@hams-fam/sso-client": "^0.2.0",
     "astro": "^7.3.3",

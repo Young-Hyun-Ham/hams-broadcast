@@ -21,12 +21,13 @@ export const GET: APIRoute = async ({ request }) => {
     const countryCode = url.searchParams.get('country') || 'KR';
 
     // 3. 수집 서비스 실행 및 Firestore 저장
-    const result = await collectAndSaveDramaData(countryCode);
+    // const result = await collectAndSaveDramaData(countryCode);
+    const result = {};
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `[${countryCode}] Firestore 저장 완료`,
+        message: `[${countryCode}] 스케쥴 실행 완료`,
         data: result,
         timestamp: new Date().toISOString()
       }),

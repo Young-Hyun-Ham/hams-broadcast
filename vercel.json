@@ -4,5 +4,6 @@
       "path": "/api/cron/collect",
       "schedule": "0 0 * * 1"
     }
-  ]
+  ],
+  "github": { "enabled": true }
 }
