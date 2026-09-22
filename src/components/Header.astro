@@ -264,6 +264,9 @@ const catalogMenuLabel = selectedCatalogCategory?.title || "드라마";
       margin: 0;
       gap: 18px;
     }
+    .header-actions {
+      margin-left: auto;
+    }
     .country-select select {
       max-width: 90px;
     }
@@ -275,12 +278,22 @@ const catalogMenuLabel = selectedCatalogCategory?.title || "드라마";
     .country-select { display:none; }
     .main-nav {
       gap: 18px;
+      right: 24px;
+    }
+    .catalog-nav-menu {
+      left: 0;
+      width: calc(100vw - 48px);
+      max-height: calc(100vh - 116px);
+      transform: none;
+      overflow-y: auto;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .icon-button {
       display: none;
     }
-    .user-button { min-width:190px; }
-    .user-summary { max-width:120px; }
+    .user-button { min-width:0; }
+    .user-summary { display:none; }
+    .user-button i { display:none; }
     .user-dropdown { width:min(310px,calc(100vw - 32px)); }
     .login-button { padding:0 12px; }
   }
