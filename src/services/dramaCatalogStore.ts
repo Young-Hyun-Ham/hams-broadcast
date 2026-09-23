@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db } from "../lib/firebaseAdmin";
-import type { CatalogBroadcast, CatalogBroadcastDetail } from "../utils/tvhotBroadcastCatalog";
+import type { CatalogBroadcast, CatalogBroadcastDetail } from "../utils/crawlers";
 
 export const CATALOG_PAGE_SIZE = 24;
 export const CATALOG_TOTAL_PAGES = 31;
@@ -24,9 +24,16 @@ function koreaDate(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(date).replaceAll("-", "");
 }
 
-export function itemDocumentId(item: CatalogBroadcast) {
+export function normalizedCatalogTitle(title: string) {
+  return title.normalize("NFKC").toLocaleLowerCase("ko-KR").replace(/[\p{P}\p{S}\s]+/gu, "");
+}
+
+export function itemDocumentId(item: CatalogBroadcast, category?: string) {
   const title = item.title.normalize("NFKC").replace(/[\/#?\[\]*]/g, " ").replace(/\s+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
-  const key = createHash("sha256").update(item.detailKey).digest("hex").slice(0, 12);
+  const identity = category
+    ? `${category}\0${normalizedCatalogTitle(item.title)}`
+    : item.detailKey;
+  const key = createHash("sha256").update(identity).digest("hex").slice(0, 12);
   return `${title}-${key}`;
 }
 

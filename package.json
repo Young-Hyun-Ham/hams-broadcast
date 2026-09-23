@@ -9,7 +9,9 @@
     "dev": "astro dev --port 3012",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "migrate:drama-catalog-state": "node scripts/migrate-drama-catalog-state.mjs",
+    "migrate:selected-catalog-states": "node scripts/migrate-selected-catalog-states.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.6",

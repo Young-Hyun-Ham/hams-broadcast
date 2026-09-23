@@ -7,7 +7,7 @@ import {
 } from "../../../lib/adminAuth";
 import { db } from "../../../lib/firebaseAdmin";
 import { createHistory } from "../../../services/dramaCatalogStore";
-import { fetchCatalogDetail } from "../../../utils/tvhotBroadcastCatalog";
+import { fetchCatalogDetail } from "../../../utils/crawlers";
 
 export const prerender = false;
 export const POST: APIRoute = async ({ request }) => {
@@ -17,22 +17,22 @@ export const POST: APIRoute = async ({ request }) => {
     const categoryKey = String(body.category || "");
     const category = getCatalogCategory(categoryKey);
     if (!category) throw new Error("지원하지 않는 카테고리입니다.");
-    const current = await db
-      .collection(`${category.collection}CatalogMeta`)
-      .doc("current")
-      .get();
-    const documentId = String(
-      body.documentId || current.data()?.documentId || "",
-    );
-    if (!documentId) throw new Error(`${category.title} 생성 문서가 없습니다.`);
-    const collection = db
-      .collection(category.collection)
-      .doc(documentId)
-      .collection("items");
+    const state = await db.collection("catalogState").doc(categoryKey).get();
+    if (!state.exists) throw new Error(`${category.title} 생성 데이터가 없습니다.`);
+    const documentId = String(state.data()?.lastSuccessfulRunId || categoryKey);
     const itemId = String(body.itemId || "");
-    const documents = itemId
-      ? [await collection.doc(itemId).get()]
-      : (await collection.orderBy("globalOrder").get()).docs;
+    let documents: FirebaseFirestore.DocumentSnapshot[];
+    if (itemId) {
+      documents = [await db.collection("catalogItems").doc(itemId).get()];
+    } else {
+      const stateItems = await state.ref.collection("items").orderBy("order").get();
+      documents = [];
+      for (let start = 0; start < stateItems.docs.length; start += 300) {
+        const references = stateItems.docs.slice(start, start + 300)
+          .map((document) => db.collection("catalogItems").doc(document.id));
+        if (references.length) documents.push(...await db.getAll(...references));
+      }
+    }
     const targets = documents.filter((document) => document.exists).filter((document) => {
       const characters = document.data()?.characters;
       return !Array.isArray(characters) || characters.length === 0;

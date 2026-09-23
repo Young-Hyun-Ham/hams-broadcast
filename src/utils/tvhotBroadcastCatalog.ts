@@ -1,22 +1,12 @@
 const SOURCE_ORIGIN =
   import.meta.env.DRAMA_CATALOG_SOURCE_URL || "https://tvhot2.com";
 
-export type CatalogBroadcast = {
-  detailKey: string;
-  title: string;
-  thumbnailUrl: string;
-  genres: string[];
-  rating: number | null;
-  isUpdated: boolean;
-};
+import type {
+  CatalogBroadcast,
+  CatalogBroadcastDetail,
+} from "./crawlers/types";
 
-export type CatalogBroadcastDetail = {
-  synopsis: string;
-  posterUrl: string;
-  genres: string[];
-  information: Record<string, string>;
-  cast: Array<{ name: string; imageUrl: string }>;
-};
+export type { CatalogBroadcast, CatalogBroadcastDetail } from "./crawlers/types";
 
 function decodeHtml(value: string) {
   return value

@@ -3,7 +3,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import { getCatalogCategory } from "../../../config/catalogCategories";
 import { db } from "../../../lib/firebaseAdmin";
 import { createBroadcastHistory } from "../../../services/broadcastCatalogHistory";
-import { fetchCatalogDetail } from "../../../utils/tvhotBroadcastCatalog";
+import { fetchCatalogDetail } from "../../../utils/crawlers";
 
 export const prerender = false;
 export const GET: APIRoute = async ({ url }) => {
@@ -17,11 +17,9 @@ export const GET: APIRoute = async ({ url }) => {
       { status: 400 },
     );
   try {
-    const ref = db
-      .collection(category.collection)
-      .doc(documentId)
-      .collection("items")
-      .doc(itemId);
+    const ref = documentId === categoryKey
+      ? db.collection("catalogItems").doc(itemId)
+      : db.collection(category.collection).doc(documentId).collection("items").doc(itemId);
     const snapshot = await ref.get();
     if (!snapshot.exists) throw new Error("작품 정보를 찾을 수 없습니다.");
     const item = snapshot.data()!;

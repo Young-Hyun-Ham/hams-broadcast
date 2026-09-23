@@ -10,12 +10,9 @@ export const GET: APIRoute = async ({ url }) => {
     const documentId = String(url.searchParams.get("documentId") || "");
     const itemId = String(url.searchParams.get("itemId") || "");
     if (!category || !documentId || !itemId) throw new Error();
-    const snapshot = await db
-      .collection(category.collection)
-      .doc(documentId)
-      .collection("items")
-      .doc(itemId)
-      .get();
+    const snapshot = await (documentId === String(url.searchParams.get("category") || "drama")
+      ? db.collection("catalogItems").doc(itemId)
+      : db.collection(category.collection).doc(documentId).collection("items").doc(itemId)).get();
     const data = snapshot.data();
     if (!data?.thumbnailImageData) throw new Error();
     return new Response(

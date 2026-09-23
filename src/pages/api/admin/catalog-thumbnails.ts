@@ -6,7 +6,7 @@ import {
   isAdminRequest,
 } from "../../../lib/adminAuth";
 import { db } from "../../../lib/firebaseAdmin";
-import { archiveBroadcastThumbnails } from "../../../services/broadcastThumbnailArchive";
+import { archiveCatalogThumbnails } from "../../../services/broadcastThumbnailArchive";
 import { createHistory } from "../../../services/dramaCatalogStore";
 
 export const prerender = false;
@@ -26,15 +26,12 @@ export const POST: APIRoute = async ({ request }) => {
   });
   try {
     const current = await db
-      .collection(`${category.collection}CatalogMeta`)
-      .doc("current")
+      .collection("catalogState")
+      .doc(categoryKey)
       .get();
-    const documentId = String(current.data()?.documentId || "");
-    if (!documentId) throw new Error(`${category.title} 생성 문서가 없습니다.`);
-    const result = await archiveBroadcastThumbnails(
-      documentId,
-      category.collection,
-    );
+    const documentId = String(current.data()?.lastSuccessfulRunId || categoryKey);
+    if (!current.exists) throw new Error(`${category.title} 생성 문서가 없습니다.`);
+    const result = await archiveCatalogThumbnails(categoryKey);
     await history.update({
       status: "success",
       documentId,

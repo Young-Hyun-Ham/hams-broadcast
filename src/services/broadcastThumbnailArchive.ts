@@ -16,7 +16,22 @@ function imageMimeFromUrl(value: string) {
 
 export async function archiveBroadcastThumbnails(documentId: string, collectionName = "drama") {
   const snapshot = await db.collection(collectionName).doc(documentId).collection("items").orderBy("globalOrder").get();
-  const targets = snapshot.docs.filter((document) => {
+  return archiveThumbnailDocuments(snapshot.docs);
+}
+
+export async function archiveCatalogThumbnails(categoryKey: string) {
+  const stateItems = await db.collection("catalogState").doc(categoryKey).collection("items").orderBy("order").get();
+  const documents: FirebaseFirestore.DocumentSnapshot[] = [];
+  for (let start = 0; start < stateItems.docs.length; start += 300) {
+    const references = stateItems.docs.slice(start, start + 300)
+      .map((document) => db.collection("catalogItems").doc(document.id));
+    if (references.length) documents.push(...await db.getAll(...references));
+  }
+  return archiveThumbnailDocuments(documents.filter((document) => document.exists));
+}
+
+async function archiveThumbnailDocuments(documents: FirebaseFirestore.DocumentSnapshot[]) {
+  const targets = documents.filter((document) => {
     const item = document.data();
     return Boolean(imageMimeFromUrl(String(item.thumbnailUrl || ""))) && !item.thumbnailImageData;
   });
